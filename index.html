@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>勇闖江湖的詹姆士｜國中社會科智慧筆記與錯題修煉場</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans TC', 'Inter', sans-serif;
+      background-color: #090d16;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    /* 背景暗黑科技網格與微光 */
+    .bg-cyber-grid {
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(16, 185, 129, 0.12), transparent 36%),
+        radial-gradient(circle at 82% 18%, rgba(245, 158, 11, 0.10), transparent 36%),
+        radial-gradient(circle at 50% 85%, rgba(168, 85, 247, 0.10), transparent 40%),
+        linear-gradient(to right, rgba(30, 41, 59, 0.35) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30, 41, 59, 0.35) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    }
+
+    /* 各科霓虹邊框與懸停發光 */
+    .card-geo:hover {
+      border-color: rgba(16, 185, 129, 0.65);
+      box-shadow: 0 12px 32px -8px rgba(16, 185, 129, 0.25);
+    }
+    .card-his:hover {
+      border-color: rgba(245, 158, 11, 0.65);
+      box-shadow: 0 12px 32px -8px rgba(245, 158, 11, 0.25);
+    }
+    .card-civ:hover {
+      border-color: rgba(168, 85, 247, 0.65);
+      box-shadow: 0 12px 32px -8px rgba(168, 85, 247, 0.25);
+    }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* 平滑展開動畫 */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeSlideIn 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-cyber-grid">
+
+  <!-- ==================== 頂部導覽列 ==================== -->
+  <header class="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/90">
+    <div class="max-w-[1440px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- 品牌識別 -->
+      <div onclick="switchMainTab('all')" class="flex items-center gap-3 cursor-pointer group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 via-cyan-400 to-amber-400 p-[2px] shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
+          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-xl">
+            🧭
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-white via-cyan-100 to-emerald-200 bg-clip-text text-transparent">
+              勇闖江湖的詹姆士
+            </h1>
+            <span class="hidden md:inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              社會科修煉系統
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">地理 × 歷史 × 公民｜統一筆記統整庫 & 錯題章節追蹤</p>
+        </div>
+      </div>
+
+      <!-- 右側核心功能操作鈕 -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="openNoteUploadModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition">
+          <span>📥</span>
+          <span>上傳整理筆記</span>
+        </button>
+
+        <button onclick="openMistakeUploadModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-rose-500/20 transition">
+          <span>📕</span>
+          <span>登錄新錯題</span>
+        </button>
+
+        <button onclick="openBackupModal()" title="匯出或匯入學習紀錄" class="px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition">
+          <span>💾</span>
+          <span class="hidden sm:inline">備份/還原</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 分頁導覽列 -->
+    <div class="max-w-[1440px] mx-auto px-4 pt-1 pb-2.5 flex items-center justify-between gap-3 overflow-x-auto">
+      <nav class="flex items-center gap-1.5">
+        <button onclick="switchMainTab('all')" id="tab-all" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-950 shadow transition whitespace-nowrap">
+          🏯 江湖總覽
+        </button>
+        <button onclick="switchMainTab('geo')" id="tab-geo" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition whitespace-nowrap">
+          🌍 地理秘笈
+        </button>
+        <button onclick="switchMainTab('his')" id="tab-his" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition whitespace-nowrap">
+          📜 歷史編年
+        </button>
+        <button onclick="switchMainTab('civ')" id="tab-civ" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition whitespace-nowrap">
+          ⚖️ 公民法典
+        </button>
+        <button onclick="switchMainTab('mistakes')" id="tab-mistakes" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition whitespace-nowrap flex items-center gap-1.5">
+          <span>⚔️ 錯題修煉題庫</span>
+          <span id="navMistakeCount" class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[11px]">0</span>
+        </button>
+      </nav>
+
+      <!-- 搜尋框 -->
+      <div class="relative hidden md:block w-64">
+        <input id="globalSearchInput" oninput="renderCurrentView()" type="text" placeholder="搜尋單元、關鍵字或章節..."
+          class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400" />
+        <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs">🔍</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 主內容區 ==================== -->
+  <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 py-6 space-y-6">
+
+    <!-- 1. 江湖修煉儀表板橫幅 -->
+    <section id="heroDashboard" class="bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+      <div class="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+      <div class="absolute right-32 -bottom-16 w-56 h-56 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
+        <!-- 左側歡迎詞與快捷入口 -->
+        <div class="lg:col-span-7 space-y-3">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-xs text-cyan-300 font-semibold">
+            <span>⚔️ 國中社會科全攻略基地</span>
+            <span class="text-slate-500">|</span>
+            <span id="todayDateLabel" class="text-slate-300">準備好迎接會考與段考了嗎？</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
+            歡迎回到修煉場，詹姆士！<br class="sm:hidden" />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-300 to-amber-300">把雜亂講義變成你的獨家武功秘笈</span>
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+            上傳補習班講義 PDF、手寫筆記照片或線上教學網址，系統自動幫你統整成一致的重點圖卡；考卷寫錯的題目拍下來丟進錯題庫，自動標註課本章節出處與詳解！
+          </p>
+
+          <!-- 快捷行動列 -->
+          <div class="pt-1 flex flex-wrap items-center gap-2.5">
+            <button onclick="openNoteUploadModal()" class="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-200 text-xs sm:text-sm font-bold flex items-center gap-2 transition">
+              <span>📄</span>
+              <span>丟入 PDF / 照片 / 網址 → 生成統一筆記</span>
+            </button>
+            <button onclick="switchMainTab('mistakes')" class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-200 text-xs sm:text-sm font-bold flex items-center gap-2 transition">
+              <span>🎯</span>
+              <span>進入錯題修煉場 (<span id="heroPendingMistakes">0</span> 題待複習)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 右側數據統計與三科戰力條 -->
+        <div class="lg:col-span-5 grid grid-cols-3 gap-3 bg-slate-950/75 border border-slate-800/90 rounded-2xl p-4">
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400 font-semibold">已收錄秘笈</div>
+            <div id="statTotalNotes" class="text-2xl sm:text-3xl font-black text-cyan-300 mt-1">0</div>
+            <div class="text-[11px] text-emerald-400 mt-0.5">統一格式圖卡</div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400 font-semibold">錯題總收錄</div>
+            <div id="statTotalMistakes" class="text-2xl sm:text-3xl font-black text-rose-400 mt-1">0</div>
+            <div id="statMasteredLabel" class="text-[11px] text-slate-400 mt-0.5">已精熟 0 題</div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
+            <div class="text-xs text-slate-400 font-semibold">錯題精熟率</div>
+            <div id="statMasteryRate" class="text-2xl sm:text-3xl font-black text-amber-300 mt-1">0%</div>
+            <div class="text-[11px] text-amber-400/80 mt-0.5">持續修煉中</div>
+          </div>
+
+          <!-- 三科分布進度條 -->
+          <div class="col-span-3 pt-1 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-400 font-semibold">三科筆記館藏分布</span>
+              <span id="subjectRatioText" class="text-slate-300 font-medium">地理 0｜歷史 0｜公民 0</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex">
+              <div id="barGeo" class="bg-emerald-400 h-full transition-all duration-500" style="width: 34%"></div>
+              <div id="barHis" class="bg-amber-400 h-full transition-all duration-500" style="width: 33%"></div>
+              <div id="barCiv" class="bg-purple-400 h-full transition-all duration-500" style="width: 33%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 視圖 A：統一風格重點筆記庫 (總覽 / 地理 / 歷史 / 公民) ==================== -->
+    <section id="notesSection" class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <h3 id="notesSectionTitle" class="text-lg sm:text-xl font-black text-white">📚 江湖武功秘笈庫（統一風格重點筆記）</h3>
+          <span id="notesFilterBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">全部科目</span>
+        </div>
+        <button onclick="openNoteUploadModal()" class="text-xs font-bold text-cyan-300 hover:text-cyan-200 flex items-center gap-1">
+          <span>＋ 新增或上傳檔案轉成筆記卡</span>
+        </button>
+      </div>
+
+      <!-- 筆記卡片網格 -->
+      <div id="notesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <!-- 由 JS 動態渲染統一格式筆記卡 -->
+      </div>
+    </section>
+
+    <!-- ==================== 視圖 B：專屬錯題江湖題庫 ==================== -->
+    <section id="mistakesSection" class="hidden space-y-4">
+      <div class="bg-slate-900/90 border border-rose-500/30 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
+            <span>⚔️ 詹姆士的錯題修煉題庫</span>
+            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">先重做再看詳解</span>
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">
+            每道錯題皆預設隱藏答案，讓你先重新挑戰！點擊「查看解答與章節出處」即可顯示完整解析與課本對應章節。
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="mistakeSubjectFilter" onchange="renderMistakes()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 font-semibold focus:outline-none focus:border-rose-400">
+            <option value="all">全部科目錯題</option>
+            <option value="geo">🌍 地理科</option>
+            <option value="his">📜 歷史科</option>
+            <option value="civ">⚖️ 公民科</option>
+          </select>
+
+          <select id="mistakeStatusFilter" onchange="renderMistakes()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 font-semibold focus:outline-none focus:border-rose-400">
+            <option value="all">全部狀態</option>
+            <option value="pending">🔥 待複習（未精熟）</option>
+            <option value="mastered">✅ 已精熟斬殺</option>
+          </select>
+
+          <button onclick="openMistakeUploadModal()" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-500/25 transition">
+            + 上傳新錯題
+          </button>
+        </div>
+      </div>
+
+      <!-- 錯題卡片列表 -->
+      <div id="mistakesList" class="space-y-4">
+        <!-- 由 JS 動態渲染錯題卡片 -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== 彈窗 1：查看統一筆記完整細節 ==================== -->
+  <div id="noteDetailModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in">
+      <button onclick="closeModal('noteDetailModal')" class="absolute top-5 right-5 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+      <div id="noteDetailContent">
+        <!-- 動態填入統一結構化筆記內容 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 彈窗 2：功能一【智慧筆記上傳與統一格式生成工廠】 ==================== -->
+  <div id="noteUploadModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl max-w-4xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto animate-fade-in">
+      <button onclick="closeModal('noteUploadModal')" class="absolute top-5 right-5 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+      
+      <div class="flex items-center gap-2.5">
+        <span class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl">📥</span>
+        <div>
+          <h3 class="text-xl font-black text-white">智慧筆記整理工廠（自動統一視覺與重點格式）</h3>
+          <p class="text-xs text-slate-400">上傳 PDF、筆記照片，或貼上線上教學網站／講義文字，AI 自動幫你淬鍊成「江湖秘笈卡」</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
+        <!-- 左側：資料來源輸入區 (6欄) -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">1. 選擇科目</label>
+              <select id="uploadNoteSubject" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-semibold focus:outline-none focus:border-emerald-400">
+                <option value="geo">🌍 地理科</option>
+                <option value="his">📜 歷史科</option>
+                <option value="civ">⚖️ 公民科</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">2. 冊別／章節標註</label>
+              <input id="uploadNoteChapter" type="text" placeholder="例：國一上 第3章 臺灣的氣候"
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+            </div>
+          </div>
+
+          <!-- 檔案拖曳上傳區 (支援 PDF / JPG / PNG / TXT) -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">3. 上傳檔案（PDF 講義 / 筆記照片 JPG·PNG / 文字檔）</label>
+            <label for="noteFileInput" class="border-2 border-dashed border-slate-700 hover:border-emerald-400 bg-slate-950/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition">
+              <span class="text-2xl mb-1">📎</span>
+              <span class="text-xs font-bold text-emerald-300">點擊選擇檔案或拖曳至此</span>
+              <span class="text-[11px] text-slate-500 mt-0.5">支援 PDF、筆記拍照截圖 (JPG/PNG)、TXT 講義</span>
+              <input id="noteFileInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md" onchange="handleNoteFileUpload(event)" class="hidden" />
+            </label>
+            <div id="noteFilePreviewBox" class="hidden mt-2 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 overflow-hidden">
+                <img id="noteImgThumb" class="hidden w-10 h-10 rounded-lg object-cover border border-slate-600" alt="筆記預覽" />
+                <span id="noteFileIcon" class="text-lg">📄</span>
+                <span id="noteFileName" class="text-xs text-slate-200 truncate font-medium">檔案名稱</span>
+              </div>
+              <button onclick="clearNoteFile()" class="text-xs text-rose-400 hover:underline px-2">移除</button>
+            </div>
+          </div>
+
+          <!-- 線上教學網址 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">4. 或貼上線上教學網址（YouTube / 教學文章連結）</label>
+            <input id="uploadNoteUrl" type="url" placeholder="https://..."
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
+          </div>
+
+          <!-- 貼上原始筆記/重點文字 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">5. 講義內容或課堂板書文字（可補充說明）</label>
+            <textarea id="uploadNoteRawText" rows="4" placeholder="貼上老師的重點整理、課文段落，或讓 AI 直接讀取上方上傳的筆記圖片 / PDF..."
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"></textarea>
+          </div>
+
+          <button id="btnGenerateUnifiedNote" onclick="generateUnifiedNote()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition">
+            <span>✨</span>
+            <span>一鍵生成統一風格重點筆記</span>
+          </button>
+        </div>
+
+        <!-- 右側：統一格式預覽與微調區 (6欄) -->
+        <div class="lg:col-span-6 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider">📋 統一筆記模板預覽（可手動微調）</span>
+              <span id="noteGenStatus" class="text-[11px] text-slate-400">等待輸入資料...</span>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="text-[11px] text-slate-400 font-bold">單元標題</label>
+                <input id="previewNoteTitle" type="text" placeholder="生成後自動填入單元名稱..."
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-bold text-white mt-0.5" />
+              </div>
+
+              <div>
+                <label class="text-[11px] text-slate-400 font-bold">💡 核心觀念一句話</label>
+                <input id="previewNoteCore" type="text" placeholder="一句話貫穿本單元靈魂..."
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-cyan-200 mt-0.5" />
+              </div>
+
+              <div>
+                <label class="text-[11px] text-slate-400 font-bold">📌 結構化重點條列（每行一點）</label>
+                <textarea id="previewNotePoints" rows="5" placeholder="• 重點一&#10;• 重點二&#10;• 重點三"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 mt-0.5 leading-relaxed"></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="text-[11px] text-amber-300 font-bold">🔥 江湖必背口訣</label>
+                  <input id="previewNoteMnemonic" type="text" placeholder="順口溜或記憶法..."
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-200 mt-0.5" />
+                </div>
+                <div>
+                  <label class="text-[11px] text-rose-300 font-bold">🎯 段考／會考高頻考點</label>
+                  <input id="previewNoteHotspot" type="text" placeholder="最常考的比較或陷阱..."
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-rose-200 mt-0.5" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="saveUnifiedNote()" class="mt-4 w-full py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-black text-sm shadow transition">
+            💾 確認儲存並上架至筆記庫
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 彈窗 3：功能二【上傳新錯題與自動解析章節出處】 ==================== -->
+  <div id="mistakeUploadModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-rose-500/40 rounded-3xl max-w-4xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto animate-fade-in">
+      <button onclick="closeModal('mistakeUploadModal')" class="absolute top-5 right-5 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+
+      <div class="flex items-center gap-2.5">
+        <span class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-xl">📕</span>
+        <div>
+          <h3 class="text-xl font-black text-white">登錄新錯題（自動分析章節出處與詳解）</h3>
+          <p class="text-xs text-slate-400">上傳考卷錯題照片或貼上題目文字，系統自動比對課本章節出處並生成逐項詳解</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
+        <!-- 左側：題目與照片輸入 (6欄) -->
+        <div class="lg:col-span-6 space-y-3.5">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">所屬科目</label>
+              <select id="mSubject" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-semibold">
+                <option value="geo">🌍 地理科</option>
+                <option value="his">📜 歷史科</option>
+                <option value="civ">⚖️ 公民科</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">考卷來源（選填）</label>
+              <input id="mExamSource" type="text" placeholder="例：115上 第一次段考 / 講義習題"
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500" />
+            </div>
+          </div>
+
+          <!-- 錯題照片上傳 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">📸 上傳錯題照片／截圖（選填，支援 AI 看圖辨識）</label>
+            <label for="mistakeImgInput" class="border-2 border-dashed border-slate-700 hover:border-rose-400 bg-slate-950/60 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition">
+              <span class="text-lg">🖼️</span>
+              <span class="text-xs font-bold text-rose-300">點擊上傳考卷錯題截圖 (JPG / PNG)</span>
+              <input id="mistakeImgInput" type="file" accept="image/*" onchange="handleMistakeImgUpload(event)" class="hidden" />
+            </label>
+            <div id="mistakeImgPreviewWrap" class="hidden mt-2 relative">
+              <img id="mistakeImgPreview" class="max-h-36 rounded-xl border border-slate-700 mx-auto" alt="錯題截圖" />
+              <button onclick="clearMistakeImg()" class="mt-1 text-xs text-rose-400 hover:underline block mx-auto">移除圖片</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">題目敘述</label>
+            <textarea id="mQuestionText" rows="3" placeholder="輸入題目文字（若已上傳清晰題目照片，可按下方 AI 自動辨識）..."
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm text-white placeholder-slate-500"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <input id="mOptA" type="text" placeholder="(A) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+            <input id="mOptB" type="text" placeholder="(B) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+            <input id="mOptC" type="text" placeholder="(C) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+            <input id="mOptD" type="text" placeholder="(D) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-rose-300 mb-1">❌ 當時誤選答案</label>
+              <select id="mWrongChoice" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-sm text-rose-300 font-bold">
+                <option value="A">(A)</option>
+                <option value="B">(B)</option>
+                <option value="C">(C)</option>
+                <option value="D">(D)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-emerald-300 mb-1">✅ 正確解答</label>
+              <select id="mCorrectChoice" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-sm text-emerald-300 font-bold">
+                <option value="A">(A)</option>
+                <option value="B">(B)</option>
+                <option value="C">(C)</option>
+                <option value="D">(D)</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="btnAnalyzeMistake" onclick="analyzeMistakeWithAI()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-black text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition">
+            <span>🤖</span>
+            <span>AI 自動識別題目、章節出處與詳細解析</span>
+          </button>
+        </div>
+
+        <!-- 右側：章節出處與詳解編輯區 (6欄) -->
+        <div class="lg:col-span-6 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-rose-300 uppercase tracking-wider">📚 章節出處與詳解檔案</span>
+              <span id="mistakeAiStatus" class="text-[11px] text-slate-400">可手動填寫或按 AI 解析</span>
+            </div>
+
+            <div>
+              <label class="text-[11px] text-amber-300 font-bold">📖 課本章節出處（冊別 / 章節 / 重點）</label>
+              <input id="mChapterRef" type="text" placeholder="例：國中地理 第一冊 第2章 臺灣的地形與海岸（重點2-3）"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-200 font-semibold mt-0.5" />
+            </div>
+
+            <div>
+              <label class="text-[11px] text-cyan-300 font-bold">🏷️ 核心考點標籤</label>
+              <input id="mConceptTag" type="text" placeholder="例：四種海岸類型比較、斷層海岸特徵"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-cyan-200 mt-0.5" />
+            </div>
+
+            <div>
+              <label class="text-[11px] text-emerald-300 font-bold">🧠 詳細解析與觀念釐清（點選解答時顯示）</label>
+              <textarea id="mExplanation" rows="8" placeholder="詳細說明為何正確答案是該選項，以及當時誤選的陷阱原因..."
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 mt-0.5 leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <button onclick="saveNewMistake()" class="mt-4 w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-sm shadow transition">
+            ⚔️ 收入錯題修煉題庫
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 彈窗 4：備份與還原學習紀錄 ==================== -->
+  <div id="backupModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative animate-fade-in">
+      <button onclick="closeModal('backupModal')" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+      <h3 class="text-lg font-black text-white flex items-center gap-2">
+        <span>💾</span> 學習紀錄備份與跨裝置還原
+      </h3>
+      <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+        詹姆士的所有自建筆記與錯題庫都會自動儲存在瀏覽器中。若要換電腦或手機複習，可隨時匯出 JSON 備份檔！
+      </p>
+
+      <div class="mt-4 space-y-3">
+        <button onclick="exportAllData()" class="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm transition">
+          ⬇️ 匯出全部筆記與錯題庫 (.json)
+        </button>
+
+        <label class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition">
+          <span>⬆️ 匯入備份檔還原資料</span>
+          <input type="file" accept=".json" onchange="importAllData(event)" class="hidden" />
+        </label>
+
+        <button onclick="resetToDefaults()" class="w-full py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-950/40 transition">
+          重設為預設範例資料庫
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 輕量提示 Toast -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-cyan-400/60 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
+    <span id="toastIcon">✨</span>
+    <span id="toastMsg">操作成功！</span>
+  </div>
+
+  <script>
+    // ==================== 預設資料庫 (包含國一地理 3D 地形圖與三科範例) ====================
+    const DEFAULT_NOTES = [
+      {
+        id: 'note-geo-terrain',
+        subject: 'geo',
+        chapter: '國一上 地理｜第2章 臺灣的地形與海岸',
+        title: '臺灣五大地形、四種海岸與離島地質全攻略',
+        core: '受板塊擠壓（內營力）與河川海浪（外營力）交互作用，塑造臺灣山高水急、地形多樣的特色。',
+        interactiveUrl: 'geo/taiwan-terrain.html',
+        interactiveLabel: '進入 3D 螢光地形互動地圖 →',
+        points: [
+          '【五大山脈 ≥1000m】雪山（國五雪隧）、中央（蘇澳至鵝鑾鼻）、海岸（地質年輕）、玉山（八通關古道/布農族）、阿里山（地質古老/鄒族）。',
+          '【三縣市丘陵 <1000m】桃園、新竹、苗栗丘陵，客家人開闢梯田種茶樹與果樹。',
+          '【六大臺地】頂平邊陡（<1000m）：林口、桃園（多埤塘灌溉）、大肚、八卦、恆春半島、澎湖（玄武岩平臺狀）。',
+          '【四大盆地】中間低四周高：臺北、臺中、埔里（南投）、泰源（臺東）。',
+          '【六大平原】蘭陽、花東縱谷、屏東、嘉南（最大/西拉雅族）、雲林（蔬果）、彰化（花卉）。',
+          '【離島地質】大陸島（金門花崗岩、馬祖連江縣）；火山島（澎湖、釣魚臺、龜山島、綠島海底溫泉、蘭嶼達悟族）；珊瑚礁島（小琉球、東沙、太平島、澎湖南方四島）。'
+        ],
+        mnemonic: '內營力長痘痘，外營力擠痘痘；盆地中間低，臺地頂部平；東岸平直少灣澳，西岸沙洲養蚵蝦。',
+        hotspot: '海岸山脈(年輕) vs 阿里山山脈(古老)；彰化(花卉) vs 雲林(蔬果)；離島三大成因分類。',
+        sourceType: '補習班板書 + 3D 互動系統',
+        createdAt: '2026-11-16'
+      },
+      {
+        id: 'note-his-discovery',
+        subject: 'his',
+        chapter: '國一上 歷史｜第2章 大航海時代與荷西治臺',
+        title: '大航海時代的臺灣：荷蘭、西班牙與鄭氏時期比較',
+        core: '17 世紀臺灣因位居東亞航線樞紐，成為歐洲海權國家與漢人海商競逐的轉口貿易基地。',
+        points: [
+          '【荷蘭統治南部（1624–1662）】以大員（臺南安平）為中心，建熱蘭遮城、普羅民遮城；引進漢人開墾種植稻米與甘蔗，並創製「新港文」教導西拉雅族。',
+          '【西班牙統治北部（1626–1642）】佔領雞籠（基隆，建聖薩爾瓦多城）與滬尾（淡水，建聖多明哥城），為對抗荷蘭並與中國、日本貿易。',
+          '【郭懷一事件（1652）】因荷蘭課徵重稅（人頭稅、狩獵稅）引發漢人起事抗暴，最終遭荷蘭聯合原住民鎮壓。',
+          '【鄭氏時期（1662–1683）】鄭成功驅逐荷蘭人；陳永華推行「寓兵於農」（軍屯）解決糧食問題，並興建全臺首學（臺南孔廟）。'
+        ],
+        mnemonic: '荷南西北爭大員，新港文書傳西拉雅；鄭氏軍屯解糧荒，永華建廟興文教。',
+        hotspot: '熱蘭遮城 vs 普羅民遮城功能區分；郭懷一事件背景；軍屯制度目的。',
+        sourceType: '歷史重點架構模板',
+        createdAt: '2026-11-15'
+      },
+      {
+        id: 'note-civ-family',
+        subject: 'civ',
+        chapter: '國一上 公民｜第2章 家庭型態與性別平權',
+        title: '現代家庭型態變遷與親屬關係判讀',
+        core: '隨著工業化與都市化發展，臺灣家庭規模趨於小型化，家庭功能也逐步由社會福利制度分擔。',
+        points: [
+          '【核心家庭（小家庭）】由一對夫妻及其未婚子女組成，親子關係單純、決策快，但育兒與長照人力較吃緊。',
+          '【折衷家庭（三代同堂）】父母、一對已婚子女及其孫子女組成，兼具親情照顧與世代互助優勢。',
+          '【擴展家庭（大家庭）】兩對以上已婚兄弟姊妹與父母同住，常見於傳統農業社會。',
+          '【多元家庭型態】單親家庭、重組家庭（繼親家庭）、隔代教養家庭、頂客族（雙薪無子女）、跨國婚姻家庭。',
+          '【親屬關係分類】配偶（婚姻關係）、血親（自然血親如父母子女；法定血親如收養）、姻親（血親之配偶、配偶之血親、配偶之血親之配偶）。'
+        ],
+        mnemonic: '核心小家庭、折衷三代堂、擴展兄弟聚；收養算血親，連襟妯娌是姻親。',
+        hotspot: '姻親範圍判斷（親家公母不是姻親！）；高齡化社會下的家庭功能轉變。',
+        sourceType: '公民核心概念卡',
+        createdAt: '2026-11-14'
+      }
+    ];
+
+    const DEFAULT_MISTAKES = [
+      {
+        id: 'mis-01',
+        subject: 'geo',
+        examSource: '國一地理 隨堂練習卷',
+        question: '臺灣四面環海，各地海岸景觀大不相同。請問東部海岸因為受到板塊擠壓與斷層作用影響，呈現何種地形特徵，導致 1930 年代必須以人工方式修建花蓮港？',
+        options: {
+          A: '海岸線曲折多岬角與海灣，水深港闊',
+          B: '海岸線過於平直，缺乏天然灣澳避風',
+          C: '河川泥沙堆積旺盛，離岸沙洲與潟湖遍布',
+          D: '珊瑚礁裙礁發達，海水淺且暗礁多'
+        },
+        wrongChoice: 'A',
+        correctChoice: 'B',
+        chapterRef: '國中地理 第一冊 第2章 臺灣的地形與海岸（重點 2-4 四種海岸類型）',
+        conceptTag: '東部斷層海岸 vs 北部灣澳海岸',
+        explanation: '正確答案為 (B)。臺灣四種海岸口訣：「東岸平直少灣澳，西岸沙洲養蚵蝦」。\n• (A) 海岸線曲折多岬角灣澳的是「北部山地灣澳海岸」（如基隆港、蘇澳港），並非東部。\n• (B) 正確！東部為「斷層海岸」（岩岸），峭壁緊鄰深海，海岸線過於平直缺乏天然灣澳，故需人工築堤修建花蓮港。\n• (C) 沙洲與潟湖遍布是「西部沙岸」。\n• (D) 珊瑚礁海岸主要分布於「南部恆春半島」。',
+        mastered: false,
+        createdAt: '2026-11-16'
+      },
+      {
+        id: 'mis-02',
+        subject: 'geo',
+        examSource: '國一地理 離島地質小考',
+        question: '下列關於臺灣周邊離島的地理位置與地質成因配對，何者完全正確？',
+        options: {
+          A: '金門列島 — 火山島 — 柱狀玄武岩發達',
+          B: '龜山島 — 珊瑚礁島 — 位於高雄西南方外海',
+          C: '馬祖列島 — 大陸島 — 位於臺北市西北方，屬連江縣',
+          D: '太平島 — 火山島 — 位於臺灣東北方，擁有海底溫泉'
+        },
+        wrongChoice: 'D',
+        correctChoice: 'C',
+        chapterRef: '國中地理 第一冊 第1章～第2章 臺灣的位置與周邊離島地質',
+        conceptTag: '大陸島、火山島、珊瑚礁島方位與成因',
+        explanation: '正確答案為 (C)。\n• (A) 金門是「大陸島」，岩石以堅硬的「花崗岩」為主（柱狀玄武岩是澎湖）。\n• (B) 龜山島是「火山島」，位於「宜蘭縣」頭城外海。\n• (C) 正確！馬祖屬連江縣，位於臺北市的西北方、閩江口外，與金門同屬大陸島。\n• (D) 太平島是位於南海的「珊瑚礁島」（我國領土最南端）；位於臺灣東北方的火山島是釣魚臺列嶼，擁有海底溫泉的火山島則是臺東外海的綠島。',
+        mastered: false,
+        createdAt: '2026-11-16'
+      },
+      {
+        id: 'mis-03',
+        subject: 'his',
+        examSource: '國一歷史 段考模擬題',
+        question: '17 世紀荷蘭聯合東印度公司統治臺灣南部期間，為了向原住民族傳教並簽訂土地契約，傳教士利用羅馬字母拼寫原住民語言。請問這種文字被稱為什麼？主要通行於哪一族群？',
+        options: {
+          A: '漢字；凱達格蘭族',
+          B: '新港文；西拉雅族',
+          C: '八思巴文；布農族',
+          D: '拼音文字；達悟族'
+        },
+        wrongChoice: 'A',
+        correctChoice: 'B',
+        chapterRef: '國中歷史 第一冊 第2章 大航海時代的臺灣（重點 2-2 荷蘭的統治與教化）',
+        conceptTag: '新港文書與西拉雅族',
+        explanation: '正確答案為 (B)。荷蘭傳教士（如干治士、尤羅伯）在臺南新港社一帶以羅馬字母拼寫平埔族群「西拉雅族」的語言，稱為「新港文」（留存契約稱新港文書或番仔契），甚至沿用到清領時期。',
+        mastered: true,
+        createdAt: '2026-11-14'
+      }
+    ];
+
+    // ==================== 狀態與 LocalStorage 讀取 ====================
+    let notesData = JSON.parse(localStorage.getItem('james_social_notes_v1')) || DEFAULT_NOTES;
+    let mistakesData = JSON.parse(localStorage.getItem('james_social_mistakes_v1')) || DEFAULT_MISTAKES;
+    let activeMainTab = 'all'; // 'all' | 'geo' | 'his' | 'civ' | 'mistakes'
+    let uploadedNoteFileObj = null; // { name, type, base64, textContent }
+    let uploadedMistakeImgBase64 = null;
+
+    function persistData() {
+      localStorage.setItem('james_social_notes_v1', JSON.stringify(notesData));
+      localStorage.setItem('james_social_mistakes_v1', JSON.stringify(mistakesData));
+      updateDashboardStats();
+    }
+
+    // ==================== 初始化 ====================
+    window.onload = function () {
+      const now = new Date();
+      document.getElementById('todayDateLabel').textContent = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()} 修煉日誌`;
+      updateDashboardStats();
+      renderCurrentView();
+    };
+
+    // ==================== 科目樣式輔助函式 ====================
+    function getSubjectMeta(subj) {
+      if (subj === 'geo') {
+        return {
+          name: '地理',
+          icon: '🌍',
+          badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+          cardBorder: 'card-geo border-slate-800',
+          accentText: 'text-emerald-300',
+          btnBg: 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-500/40'
+        };
+      }
+      if (subj === 'his') {
+        return {
+          name: '歷史',
+          icon: '📜',
+          badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+          cardBorder: 'card-his border-slate-800',
+          accentText: 'text-amber-300',
+          btnBg: 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border-amber-500/40'
+        };
+      }
+      return {
+        name: '公民',
+        icon: '⚖️',
+        badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+        cardBorder: 'card-civ border-slate-800',
+        accentText: 'text-purple-300',
+        btnBg: 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border-purple-500/40'
+      };
+    }
+
+    // ==================== 更新儀表板數據 ====================
+    function updateDashboardStats() {
+      const totalNotes = notesData.length;
+      const geoCount = notesData.filter(n => n.subject === 'geo').length;
+      const hisCount = notesData.filter(n => n.subject === 'his').length;
+      const civCount = notesData.filter(n => n.subject === 'civ').length;
+
+      const totalMistakes = mistakesData.length;
+      const masteredCount = mistakesData.filter(m => m.mastered).length;
+      const pendingCount = totalMistakes - masteredCount;
+      const masteryRate = totalMistakes === 0 ? 100 : Math.round((masteredCount / totalMistakes) * 100);
+
+      document.getElementById('statTotalNotes').textContent = totalNotes;
+      document.getElementById('statTotalMistakes').textContent = totalMistakes;
+      document.getElementById('statMasteredLabel').textContent = `已精熟 ${masteredCount} 題`;
+      document.getElementById('statMasteryRate').textContent = `${masteryRate}%`;
+      document.getElementById('heroPendingMistakes').textContent = pendingCount;
+      document.getElementById('navMistakeCount').textContent = pendingCount;
+
+      document.getElementById('subjectRatioText').textContent = `地理 ${geoCount}｜歷史 ${hisCount}｜公民 ${civCount}`;
+      const sum = Math.max(1, totalNotes);
+      document.getElementById('barGeo').style.width = `${(geoCount / sum) * 100}%`;
+      document.getElementById('barHis').style.width = `${(hisCount / sum) * 100}%`;
+      document.getElementById('barCiv').style.width = `${(civCount / sum) * 100}%`;
+    }
+
+    // ==================== 分頁切換 ====================
+    function switchMainTab(tab) {
+      activeMainTab = tab;
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-white', 'scale-105');
+      });
+      const activeBtn = document.getElementById(`tab-${tab}`);
+      if (activeBtn) activeBtn.classList.add('ring-2', 'ring-white', 'scale-105');
+
+      renderCurrentView();
+    }
+
+    function renderCurrentView() {
+      const notesSec = document.getElementById('notesSection');
+      const mistakesSec = document.getElementById('mistakesSection');
+
+      if (activeMainTab === 'mistakes') {
+        notesSec.classList.add('hidden');
+        mistakesSec.classList.remove('hidden');
+        renderMistakes();
+      } else {
+        mistakesSec.classList.add('hidden');
+        notesSec.classList.remove('hidden');
+        renderNotes();
+      }
+    }
+
+    // ==================== 渲染統一風格筆記卡片 ====================
+    function renderNotes() {
+      const grid = document.getElementById('notesGrid');
+      const searchKw = (document.getElementById('globalSearchInput')?.value || '').trim().toLowerCase();
+
+      const badgeNames = { all: '全部科目', geo: '🌍 地理秘笈', his: '📜 歷史編年', civ: '⚖️ 公民法典' };
+      document.getElementById('notesFilterBadge').textContent = badgeNames[activeMainTab] || '全部科目';
+
+      const filtered = notesData.filter(n => {
+        const matchSubj = activeMainTab === 'all' || n.subject === activeMainTab;
+        const matchKw = !searchKw ||
+          n.title.toLowerCase().includes(searchKw) ||
+          n.chapter.toLowerCase().includes(searchKw) ||
+          n.core.toLowerCase().includes(searchKw) ||
+          n.points.some(p => p.toLowerCase().includes(searchKw));
+        return matchSubj && matchKw;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-slate-900/70 border border-dashed border-slate-700 rounded-2xl p-10 text-center">
+            <div class="text-3xl mb-2">📭</div>
+            <div class="text-base font-bold text-slate-300">目前還沒有符合條件的秘笈筆記</div>
+            <p class="text-xs text-slate-500 mt-1">點擊上方「上傳整理筆記」，把講義 PDF、照片或網址一鍵轉成統一筆記卡！</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(note => {
+        const meta = getSubjectMeta(note.subject);
+        const previewPoints = note.points.slice(0, 3);
+        return `
+          <article class="bg-slate-900/90 border ${meta.cardBorder} rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 shadow-xl">
+            <div>
+              <!-- 頂部標籤列 -->
+              <div class="flex items-center justify-between gap-2 mb-2.5">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${meta.badgeClass}">
+                  ${meta.icon} ${meta.name}
+                </span>
+                <span class="text-[11px] text-slate-400 truncate max-w-[190px]" title="${note.chapter}">
+                  ${note.chapter}
+                </span>
+              </div>
+
+              <!-- 單元標題 -->
+              <h4 class="text-lg font-black text-white leading-snug mb-2">
+                ${note.title}
+              </h4>
+
+              <!-- 核心觀念一句話 -->
+              <div class="bg-slate-950/75 border border-slate-800 rounded-xl p-3 mb-3">
+                <div class="text-[11px] font-bold ${meta.accentText} mb-0.5">💡 核心觀念</div>
+                <p class="text-xs text-slate-200 leading-relaxed">${note.core}</p>
+              </div>
+
+              <!-- 重點預覽 -->
+              <ul class="space-y-1.5 text-xs text-slate-300 mb-3">
+                ${previewPoints.map(pt => `
+                  <li class="flex items-start gap-1.5">
+                    <span class="${meta.accentText} mt-0.5">▸</span>
+                    <span class="line-clamp-2">${pt}</span>
+                  </li>
+                `).join('')}
+              </ul>
+
+              <!-- 口訣標籤 -->
+              ${note.mnemonic ? `
+                <div class="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-200 mb-3">
+                  <span class="font-bold">🔥 口訣：</span>${note.mnemonic}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- 底部操作列 -->
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <button onclick="openNoteDetail('${note.id}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition">
+                📖 展開完整秘笈 (${note.points.length}點)
+              </button>
+              ${note.interactiveUrl ? `
+                <button onclick="launchInteractiveMap('${note.interactiveUrl}')" class="py-2 px-3 rounded-xl border ${meta.btnBg} text-xs font-extrabold transition whitespace-nowrap">
+                  ${note.interactiveLabel || '互動圖解 →'}
+                </button>
+              ` : ''}
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    // 展開統一筆記完整彈窗
+    function openNoteDetail(id) {
+      const note = notesData.find(n => n.id === id);
+      if (!note) return;
+      const meta = getSubjectMeta(note.subject);
+
+      document.getElementById('noteDetailContent').innerHTML = `
+        <div class="flex flex-wrap items-center gap-2 mb-2">
+          <span class="px-3 py-1 rounded-full text-xs font-bold border ${meta.badgeClass}">${meta.icon} ${meta.name}科秘笈</span>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">${note.chapter}</span>
+          <span class="text-xs text-slate-500 ml-auto">建立日期：${note.createdAt || '近期'}</span>
+        </div>
+
+        <h2 class="text-2xl font-black text-white mt-1">${note.title}</h2>
+
+        <div class="mt-4 bg-slate-950 border border-slate-800 rounded-2xl p-4">
+          <div class="text-xs font-bold ${meta.accentText} mb-1">💡 核心觀念一句話</div>
+          <p class="text-sm text-slate-100 font-medium leading-relaxed">${note.core}</p>
+        </div>
+
+        <div class="mt-4 space-y-2.5">
+          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">📌 結構化完整重點整理</div>
+          <ul class="space-y-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl p-4">
+            ${note.points.map((pt, idx) => `
+              <li class="flex items-start gap-2.5 text-sm text-slate-200 leading-relaxed">
+                <span class="w-5 h-5 rounded-full bg-slate-800 text-xs font-bold ${meta.accentText} flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+                <span>${pt}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+          <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5">
+            <div class="text-xs font-bold text-amber-300 mb-1">🔥 江湖必背口訣</div>
+            <p class="text-xs sm:text-sm text-amber-100 leading-relaxed">${note.mnemonic || '無'}</p>
+          </div>
+          <div class="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-3.5">
+            <div class="text-xs font-bold text-rose-300 mb-1">🎯 會考／段考高頻考點</div>
+            <p class="text-xs sm:text-sm text-rose-100 leading-relaxed">${note.hotspot || '無'}</p>
+          </div>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+          <button onclick="deleteNote('${note.id}')" class="text-xs text-rose-400 hover:underline">刪除此筆筆記</button>
+          ${note.interactiveUrl ? `
+            <button onclick="launchInteractiveMap('${note.interactiveUrl}')" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black text-sm shadow-lg">
+              🗺️ ${note.interactiveLabel || '開啟互動模組 →'}
+            </button>
+          ` : ''}
+        </div>
+      `;
+
+      const modal = document.getElementById('noteDetailModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function deleteNote(id) {
+      notesData = notesData.filter(n => n.id !== id);
+      persistData();
+      closeModal('noteDetailModal');
+      renderNotes();
+      showToast('🗑️', '已移除該筆筆記');
+    }
+
+    // 啟動地理 3D 互動地圖連結（含檔案路徑提示）
+    function launchInteractiveMap(url) {
+      window.open(url, '_blank');
+      showToast('🗺️', `正在開啟互動單元 (${url})，請確認該檔已放在對應資料夾中！`);
+    }
+
+    // ==================== 渲染錯題題庫 (點選解答 + 章節出處) ====================
+    function renderMistakes() {
+      const container = document.getElementById('mistakesList');
+      const subjFilter = document.getElementById('mistakeSubjectFilter').value;
+      const statusFilter = document.getElementById('mistakeStatusFilter').value;
+      const searchKw = (document.getElementById('globalSearchInput')?.value || '').trim().toLowerCase();
+
+      const filtered = mistakesData.filter(m => {
+        const matchSubj = subjFilter === 'all' || m.subject === subjFilter;
+        const matchStatus = statusFilter === 'all' ||
+          (statusFilter === 'mastered' && m.mastered) ||
+          (statusFilter === 'pending' && !m.mastered);
+        const matchKw = !searchKw ||
+          m.question.toLowerCase().includes(searchKw) ||
+          m.chapterRef.toLowerCase().includes(searchKw) ||
+          (m.conceptTag && m.conceptTag.toLowerCase().includes(searchKw));
+        return matchSubj && matchStatus && matchKw;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-slate-900/70 border border-dashed border-slate-700 rounded-2xl p-10 text-center">
+            <div class="text-3xl mb-2">🏆</div>
+            <div class="text-base font-bold text-slate-300">目前沒有符合篩選條件的錯題</div>
+            <p class="text-xs text-slate-500 mt-1">點擊「+ 上傳新錯題」把寫錯的考題拍下來存進修煉庫吧！</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map((m, idx) => {
+        const meta = getSubjectMeta(m.subject);
+        return `
+          <div id="mistake-card-${m.id}" class="bg-slate-900/95 border ${m.mastered ? 'border-emerald-500/35' : 'border-slate-800'} rounded-2xl p-5 shadow-xl transition">
+            <!-- 頂部狀態與來源列 -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${meta.badgeClass}">
+                  ${meta.icon} ${meta.name}錯題 #${idx + 1}
+                </span>
+                ${m.examSource ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">${m.examSource}</span>` : ''}
+                ${m.conceptTag ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">🏷️ ${m.conceptTag}</span>` : ''}
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button onclick="toggleMistakeMastered('${m.id}')" class="px-3 py-1 rounded-full text-xs font-bold transition ${
+                  m.mastered
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                }">
+                  ${m.mastered ? '✅ 已精熟斬殺' : '🔥 待複習（點此標記精熟）'}
+                </button>
+                <button onclick="deleteMistake('${m.id}')" title="刪除錯題" class="text-xs text-slate-500 hover:text-rose-400 px-1.5">✕</button>
+              </div>
+            </div>
+
+            <!-- 題目圖片 (若有上傳) -->
+            ${m.imageData ? `
+              <div class="mb-3 bg-slate-950 p-2 rounded-xl border border-slate-800 inline-block">
+                <img src="${m.imageData}" alt="錯題題目圖" class="max-h-52 rounded-lg" />
+              </div>
+            ` : ''}
+
+            <!-- 題幹 -->
+            <p class="text-sm sm:text-base font-bold text-white leading-relaxed mb-3">
+              ${m.question}
+            </p>
+
+            <!-- 互動重做選項 A/B/C/D -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
+              ${['A', 'B', 'C', 'D'].map(optKey => `
+                <button onclick="attemptMistakeOption('${m.id}', '${optKey}')"
+                  id="opt-btn-${m.id}-${optKey}"
+                  class="opt-btn-${m.id} text-left p-3 rounded-xl bg-slate-800/85 hover:bg-slate-700/90 border border-slate-700 text-xs sm:text-sm text-slate-200 font-medium transition flex items-start gap-2">
+                  <span class="font-black text-cyan-300">(${optKey})</span>
+                  <span>${m.options[optKey] || ''}</span>
+                </button>
+              `).join('')}
+            </div>
+
+            <!-- 點選解答按鈕 -->
+            <div class="flex items-center justify-between gap-3">
+              <button onclick="revealMistakeAnswer('${m.id}')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500/25 to-amber-500/25 hover:from-rose-500/35 hover:to-amber-500/35 border border-rose-500/40 text-rose-200 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition">
+                <span>💡</span>
+                <span id="reveal-btn-text-${m.id}">點選查看解答與章節出處</span>
+              </button>
+              <span class="text-[11px] text-slate-500">收錄日：${m.createdAt || '近期'}</span>
+            </div>
+
+            <!-- 隱藏的詳解與章節出處抽屜 -->
+            <div id="answer-panel-${m.id}" class="hidden mt-4 pt-4 border-t border-slate-800 space-y-3 animate-fade-in">
+              <div class="flex flex-wrap items-center gap-3">
+                <span class="px-3 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-black">
+                  ✅ 正確解答：(${m.correctChoice})
+                </span>
+                ${m.wrongChoice ? `
+                  <span class="px-3 py-1 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs sm:text-sm font-bold">
+                    ❌ 當時誤選：(${m.wrongChoice})
+                  </span>
+                ` : ''}
+              </div>
+
+              <!-- 課本章節出處 -->
+              <div class="bg-amber-500/10 border border-amber-500/35 rounded-xl p-3">
+                <div class="text-xs font-black text-amber-300 mb-0.5">📚 課本章節出處</div>
+                <div class="text-xs sm:text-sm text-amber-100 font-semibold">${m.chapterRef}</div>
+              </div>
+
+              <!-- 詳細解析 -->
+              <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5">
+                <div class="text-xs font-black text-cyan-300 mb-1">🧠 逐項詳細解析與觀念釐清</div>
+                <div class="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line">${m.explanation}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 學生重新點選錯題選項測試
+    function attemptMistakeOption(id, chosenKey) {
+      const m = mistakesData.find(item => item.id === id);
+      if (!m) return;
+
+      document.querySelectorAll(`.opt-btn-${id}`).forEach(btn => {
+        btn.classList.remove('bg-emerald-500/25', 'border-emerald-400', 'bg-rose-500/25', 'border-rose-400');
+      });
+
+      const chosenBtn = document.getElementById(`opt-btn-${id}-${chosenKey}`);
+      const correctBtn = document.getElementById(`opt-btn-${id}-${m.correctChoice}`);
+
+      if (chosenKey === m.correctChoice) {
+        chosenBtn.classList.add('bg-emerald-500/25', 'border-emerald-400');
+        showToast('🎉', `答對了！正確答案就是 (${m.correctChoice})`);
+      } else {
+        chosenBtn.classList.add('bg-rose-500/25', 'border-rose-400');
+        if (correctBtn) correctBtn.classList.add('bg-emerald-500/25', 'border-emerald-400');
+        showToast('💡', `選了 (${chosenKey})，正確答案是 (${m.correctChoice})，快看下方章節解析！`);
+      }
+
+      revealMistakeAnswer(id, true);
+    }
+
+    // 展開或收合錯題詳解與章節出處
+    function revealMistakeAnswer(id, forceOpen = false) {
+      const panel = document.getElementById(`answer-panel-${id}`);
+      const btnText = document.getElementById(`reveal-btn-text-${id}`);
+      if (!panel) return;
+
+      const isHidden = panel.classList.contains('hidden');
+      if (isHidden || forceOpen) {
+        panel.classList.remove('hidden');
+        btnText.textContent = '收合解答與章節出處';
+      } else {
+        panel.classList.add('hidden');
+        btnText.textContent = '點選查看解答與章節出處';
+      }
+    }
+
+    function toggleMistakeMastered(id) {
+      const m = mistakesData.find(item => item.id === id);
+      if (!m) return;
+      m.mastered = !m.mastered;
+      persistData();
+      renderMistakes();
+      showToast(m.mastered ? '🏆' : '🔥', m.mastered ? '太棒了！已標記為精熟斬殺！' : '已移回待複習清單');
+    }
+
+    function deleteMistake(id) {
+      mistakesData = mistakesData.filter(m => m.id !== id);
+      persistData();
+      renderMistakes();
+      showToast('🗑️', '已移除該道錯題');
+    }
+
+    // ==================== 功能一：上傳資料自動生成統一風格筆記 ====================
+    function openNoteUploadModal() {
+      uploadedNoteFileObj = null;
+      clearNoteFile();
+      document.getElementById('noteGenStatus').textContent = '等待輸入資料...';
+      const modal = document.getElementById('noteUploadModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function handleNoteFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const previewBox = document.getElementById('noteFilePreviewBox');
+      const imgThumb = document.getElementById('noteImgThumb');
+      const fileIcon = document.getElementById('noteFileIcon');
+      document.getElementById('noteFileName').textContent = file.name;
+      previewBox.classList.remove('hidden');
+
+      const reader = new FileReader();
+      if (file.type.startsWith('image/')) {
+        reader.onload = e => {
+          imgThumb.src = e.target.result;
+          imgThumb.classList.remove('hidden');
+          fileIcon.classList.add('hidden');
+          uploadedNoteFileObj = {
+            name: file.name,
+            mimeType: file.type,
+            base64: e.target.result.split(',')[1]
+          };
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type === 'application/pdf') {
+        imgThumb.classList.add('hidden');
+        fileIcon.classList.remove('hidden');
+        fileIcon.textContent = '📕';
+        reader.onload = e => {
+          uploadedNoteFileObj = {
+            name: file.name,
+            mimeType: 'application/pdf',
+            base64: e.target.result.split(',')[1]
+          };
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // TXT / Markdown
+        imgThumb.classList.add('hidden');
+        fileIcon.classList.remove('hidden');
+        fileIcon.textContent = '📝';
+        reader.onload = e => {
+          document.getElementById('uploadNoteRawText').value = e.target.result;
+          uploadedNoteFileObj = { name: file.name, mimeType: 'text/plain', textContent: e.target.result };
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    function clearNoteFile() {
+      uploadedNoteFileObj = null;
+      document.getElementById('noteFileInput').value = '';
+      document.getElementById('noteFilePreviewBox').classList.add('hidden');
+    }
+
+    // 呼叫 Gemini API 將上傳的 PDF / 筆記圖片 / 網址 / 文字轉為統一格式 JSON
+    async function generateUnifiedNote() {
+      const subject = document.getElementById('uploadNoteSubject').value;
+      const chapter = document.getElementById('uploadNoteChapter').value.trim();
+      const urlInput = document.getElementById('uploadNoteUrl').value.trim();
+      const rawText = document.getElementById('uploadNoteRawText').value.trim();
+
+      if (!uploadedNoteFileObj && !urlInput && !rawText) {
+        showToast('⚠️', '請先上傳檔案、貼上教學網址或輸入講義文字喔！');
+        return;
+      }
+
+      const btn = document.getElementById('btnGenerateUnifiedNote');
+      const statusEl = document.getElementById('noteGenStatus');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span><span>AI 正在淬鍊並統一筆記格式中...</span>';
+      statusEl.textContent = '分析中...';
+
+      const subjName = subject === 'geo' ? '國中地理' : subject === 'his' ? '國中歷史' : '國中公民';
+      const prompt = `你是專業的臺灣國中社會科老師，請將使用者提供的學習資料（可能是筆記照片、PDF講義、教學網址或課堂文字）整理成「風格統一、適合國一至國三學生複習」的繁體中文重點筆記 JSON。
+科目：${subjName}
+章節提示：${chapter || '請自動判斷冊別與章節'}
+參考網址：${urlInput || '無'}
+補充文字：${rawText || '請直接讀取附件內容'}
+
+請嚴格輸出以下 JSON 結構：
+{
+  "chapter": "例如：國一上 地理｜第3章 臺灣的氣候",
+  "title": "精煉響亮的單元標題",
+  "core": "核心觀念一句話（40字以內）",
+  "points": ["【關鍵主題1】詳細重點說明...", "【關鍵主題2】詳細重點說明...", "【關鍵主題3】詳細重點說明...", "【關鍵主題4】詳細重點說明..."],
+  "mnemonic": "朗朗上口的江湖必背口訣",
+  "hotspot": "段考與國中教育會考最常考的比較題或陷阱"
+}`;
+
+      try {
+        const parts = [{ text: prompt }];
+        if (uploadedNoteFileObj && uploadedNoteFileObj.base64) {
+          parts.push({
+            inlineData: {
+              mimeType: uploadedNoteFileObj.mimeType,
+              data: uploadedNoteFileObj.base64
+            }
+          });
+        }
+
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: { responseMimeType: 'application/json' }
+          })
+        });
+
+        const result = await response.json();
+        const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonText) throw new Error('Empty AI response');
+
+        const parsed = JSON.parse(jsonText);
+        if (parsed.chapter && !chapter) document.getElementById('uploadNoteChapter').value = parsed.chapter;
+        document.getElementById('previewNoteTitle').value = parsed.title || '新整理重點筆記';
+        document.getElementById('previewNoteCore').value = parsed.core || '';
+        document.getElementById('previewNotePoints').value = (parsed.points || []).join('\n');
+        document.getElementById('previewNoteMnemonic').value = parsed.mnemonic || '';
+        document.getElementById('previewNoteHotspot').value = parsed.hotspot || '';
+        statusEl.textContent = '✅ AI 統整完成！可微調後儲存';
+        showToast('✨', '已自動生成統一風格筆記預覽！');
+      } catch (err) {
+        // 離線或無金鑰時的本地智慧結構化備援
+        const lines = rawText.split(/\n+/).map(l => l.trim()).filter(Boolean);
+        document.getElementById('previewNoteTitle').value = chapter || (uploadedNoteFileObj ? uploadedNoteFileObj.name.replace(/\.[^/.]+$/, '') : '自訂社會科重點筆記');
+        document.getElementById('previewNoteCore').value = lines[0] || `本單元聚焦於${subjName}核心架構與因果脈絡分析。`;
+        document.getElementById('previewNotePoints').value = (lines.length > 0 ? lines : ['【重點一】請在此補充核心定義與成因', '【重點二】請在此補充地域或時代特色', '【重點三】請在此補充比較表格']).join('\n');
+        document.getElementById('previewNoteMnemonic').value = '抓關鍵字、畫對比表、理解因果不死背！';
+        document.getElementById('previewNoteHotspot').value = '常考概念配對與圖表判讀題。';
+        statusEl.textContent = '✅ 已套用統一模板（可手動編輯）';
+        showToast('📝', '已將內容套入統一筆記模板，請確認後儲存！');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>✨</span><span>一鍵生成統一風格重點筆記</span>';
+      }
+    }
+
+    function saveUnifiedNote() {
+      const title = document.getElementById('previewNoteTitle').value.trim();
+      const core = document.getElementById('previewNoteCore').value.trim();
+      const pointsRaw = document.getElementById('previewNotePoints').value.trim();
+
+      if (!title || !pointsRaw) {
+        showToast('⚠️', '請先生成或填寫「單元標題」與「結構化重點」！');
+        return;
+      }
+
+      const subject = document.getElementById('uploadNoteSubject').value;
+      const chapter = document.getElementById('uploadNoteChapter').value.trim() || `${getSubjectMeta(subject).name}科自訂單元`;
+      const mnemonic = document.getElementById('previewNoteMnemonic').value.trim();
+      const hotspot = document.getElementById('previewNoteHotspot').value.trim();
+
+      const newNote = {
+        id: 'note-' + Date.now(),
+        subject,
+        chapter,
+        title,
+        core: core || '掌握核心概念與考點脈絡。',
+        points: pointsRaw.split(/\n+/).map(s => s.replace(/^[•\-*]\s*/, '').trim()).filter(Boolean),
+        mnemonic,
+        hotspot,
+        createdAt: new Date().toISOString().slice(0, 10)
+      };
+
+      notesData.unshift(newNote);
+      persistData();
+      closeModal('noteUploadModal');
+      switchMainTab(subject);
+      showToast('🎉', `已將「${title}」加入${getSubjectMeta(subject).name}秘笈庫！`);
+    }
+
+    // ==================== 功能二：上傳新錯題與 AI 解析章節出處 ====================
+    function openMistakeUploadModal() {
+      uploadedMistakeImgBase64 = null;
+      clearMistakeImg();
+      document.getElementById('mistakeAiStatus').textContent = '可手動填寫或按 AI 解析';
+      const modal = document.getElementById('mistakeUploadModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function handleMistakeImgUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        uploadedMistakeImgBase64 = e.target.result;
+        document.getElementById('mistakeImgPreview').src = e.target.result;
+        document.getElementById('mistakeImgPreviewWrap').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearMistakeImg() {
+      uploadedMistakeImgBase64 = null;
+      document.getElementById('mistakeImgInput').value = '';
+      document.getElementById('mistakeImgPreviewWrap').classList.add('hidden');
+    }
+
+    async function analyzeMistakeWithAI() {
+      const subject = document.getElementById('mSubject').value;
+      const qText = document.getElementById('mQuestionText').value.trim();
+      const optA = document.getElementById('mOptA').value.trim();
+      const optB = document.getElementById('mOptB').value.trim();
+      const optC = document.getElementById('mOptC').value.trim();
+      const optD = document.getElementById('mOptD').value.trim();
+      const wrongChoice = document.getElementById('mWrongChoice').value;
+      const correctChoice = document.getElementById('mCorrectChoice').value;
+
+      if (!qText && !uploadedMistakeImgBase64) {
+        showToast('⚠️', '請先上傳錯題照片或輸入題目敘述！');
+        return;
+      }
+
+      const btn = document.getElementById('btnAnalyzeMistake');
+      const statusEl = document.getElementById('mistakeAiStatus');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span><span>AI 正在比對課本章節與撰寫詳解...</span>';
+      statusEl.textContent = '解析中...';
+
+      const subjName = subject === 'geo' ? '國中地理' : subject === 'his' ? '國中歷史' : '國中公民';
+      const prompt = `你是臺灣國中社會科名師，請分析這道學生寫錯的題目（若有附圖請先辨識圖中的題目與選項），並以繁體中文輸出 JSON 格式的詳細解析與課本章節出處。
+科目：${subjName}
+題目文字：${qText || '請從圖片辨識'}
+選項：(A)${optA} (B)${optB} (C)${optC} (D)${optD}
+學生誤選：${wrongChoice}；參考正解：${correctChoice}
+
+請嚴格輸出以下 JSON：
+{
+  "question": "完整題目敘述",
+  "optA": "A選項內容",
+  "optB": "B選項內容",
+  "optC": "C選項內容",
+  "optD": "D選項內容",
+  "correctChoice": "A或B或C或D",
+  "chapterRef": "精確的臺灣國中課本章節出處，例如：國中地理 第一冊 第2章 臺灣的地形與海岸（重點2-3）",
+  "conceptTag": "核心考點短標籤",
+  "explanation": "詳細逐項解析：先說明正解為何正確，再針對誤選選項與其他選項逐一破解陷阱"
+}`;
+
+      try {
+        const parts = [{ text: prompt }];
+        if (uploadedMistakeImgBase64) {
+          parts.push({
+            inlineData: {
+              mimeType: 'image/png',
+              data: uploadedMistakeImgBase64.split(',')[1]
+            }
+          });
+        }
+
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: { responseMimeType: 'application/json' }
+          })
+        });
+
+        const result = await response.json();
+        const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonText) throw new Error('Empty response');
+
+        const parsed = JSON.parse(jsonText);
+        if (parsed.question) document.getElementById('mQuestionText').value = parsed.question;
+        if (parsed.optA) document.getElementById('mOptA').value = parsed.optA;
+        if (parsed.optB) document.getElementById('mOptB').value = parsed.optB;
+        if (parsed.optC) document.getElementById('mOptC').value = parsed.optC;
+        if (parsed.optD) document.getElementById('mOptD').value = parsed.optD;
+        if (parsed.correctChoice) document.getElementById('mCorrectChoice').value = parsed.correctChoice;
+        document.getElementById('mChapterRef').value = parsed.chapterRef || `${subjName} 重點章節`;
+        document.getElementById('mConceptTag').value = parsed.conceptTag || '核心概念辨析';
+        document.getElementById('mExplanation').value = parsed.explanation || '';
+        statusEl.textContent = '✅ 章節出處與詳解已自動生成！';
+        showToast('🤖', 'AI 已自動標出課本章節出處並寫好詳解！');
+      } catch (err) {
+        document.getElementById('mChapterRef').value = `${subjName} 第一冊 相關核心章節`;
+        document.getElementById('mConceptTag').value = '觀念比較與陷阱釐清';
+        document.getElementById('mExplanation').value = `正確答案為 (${correctChoice})。\n• 為何 (${correctChoice}) 正確：符合本單元核心定義與因果條件。\n• 為何 (${wrongChoice}) 錯誤：屬於常見混淆概念，複習時請特別留意題幹關鍵字！`;
+        statusEl.textContent = '✅ 已生成解析模板（可微調）';
+        showToast('📝', '已產生章節出處與解析模板！');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🤖</span><span>AI 自動識別題目、章節出處與詳細解析</span>';
+      }
+    }
+
+    function saveNewMistake() {
+      const question = document.getElementById('mQuestionText').value.trim();
+      const chapterRef = document.getElementById('mChapterRef').value.trim();
+      const explanation = document.getElementById('mExplanation').value.trim();
+
+      if (!question && !uploadedMistakeImgBase64) {
+        showToast('⚠️', '請填寫題目內容或上傳題目圖片！');
+        return;
+      }
+
+      const newMistake = {
+        id: 'mis-' + Date.now(),
+        subject: document.getElementById('mSubject').value,
+        examSource: document.getElementById('mExamSource').value.trim() || '自主錯題收錄',
+        question: question || '（請參閱上方考卷題目截圖）',
+        imageData: uploadedMistakeImgBase64 || null,
+        options: {
+          A: document.getElementById('mOptA').value.trim() || '選項 A',
+          B: document.getElementById('mOptB').value.trim() || '選項 B',
+          C: document.getElementById('mOptC').value.trim() || '選項 C',
+          D: document.getElementById('mOptD').value.trim() || '選項 D'
+        },
+        wrongChoice: document.getElementById('mWrongChoice').value,
+        correctChoice: document.getElementById('mCorrectChoice').value,
+        chapterRef: chapterRef || '國中社會科 核心單元',
+        conceptTag: document.getElementById('mConceptTag').value.trim() || '必考重點',
+        explanation: explanation || '請參考課本對應章節重點複習。',
+        mastered: false,
+        createdAt: new Date().toISOString().slice(0, 10)
+      };
+
+      mistakesData.unshift(newMistake);
+      persistData();
+      closeModal('mistakeUploadModal');
+      switchMainTab('mistakes');
+      showToast('⚔️', '新錯題已加入修煉題庫！');
+    }
+
+    // ==================== 備份 / 還原 JSON ====================
+    function openBackupModal() {
+      const m = document.getElementById('backupModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function exportAllData() {
+      const payload = {
+        app: '勇闖江湖的詹姆士',
+        exportedAt: new Date().toISOString(),
+        notes: notesData,
+        mistakes: mistakesData
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `勇闖江湖的詹姆士_學習備份_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('💾', '已匯出完整學習紀錄 JSON 檔！');
+    }
+
+    function importAllData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed.notes) && Array.isArray(parsed.mistakes)) {
+            notesData = parsed.notes;
+            mistakesData = parsed.mistakes;
+            persistData();
+            renderCurrentView();
+            closeModal('backupModal');
+            showToast('🎉', '學習紀錄已成功還原！');
+          } else {
+            showToast('⚠️', '檔案格式不符，請選擇正確的備份檔');
+          }
+        } catch {
+          showToast('⚠️', 'JSON 解析失敗');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetToDefaults() {
+      notesData = [...DEFAULT_NOTES];
+      mistakesData = [...DEFAULT_MISTAKES];
+      persistData();
+      renderCurrentView();
+      closeModal('backupModal');
+      showToast('🔄', '已還原為初始範例資料');
+    }
+
+    // ==================== 共用彈窗與提示 ====================
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (m) {
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(icon, msg) {
+      const box = document.getElementById('toastBox');
+      document.getElementById('toastIcon').textContent = icon;
+      document.getElementById('toastMsg').textContent = msg;
+      box.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.add('hidden');
+      }, 3200);
+    }
+  </script>
+</body>
+</html>

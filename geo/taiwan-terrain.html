@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>臺灣 3D 地形與地質互動探索系統｜國一地理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans TC', 'Inter', sans-serif;
+      background-color: #090d16;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+
+    /* 3D 地圖舞台透視效果 */
+    .map-stage-wrapper {
+      perspective: 1400px;
+      overflow: hidden;
+    }
+
+    .map-3d-plane {
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-origin: center center;
+    }
+
+    .map-3d-plane.tilted {
+      transform: rotateX(34deg) rotateZ(-8deg) scale(0.95);
+    }
+
+    .map-3d-plane.flat {
+      transform: rotateX(0deg) rotateZ(0deg) scale(1);
+    }
+
+    /* 螢光筆光暈特效 */
+    .neon-magenta {
+      filter: drop-shadow(0 0 6px #e879f9) drop-shadow(0 0 12px #d946ef);
+    }
+    .neon-orange {
+      filter: drop-shadow(0 0 6px #fb923c) drop-shadow(0 0 12px #f97316);
+    }
+    .neon-yellow {
+      filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #eab308);
+    }
+    .neon-cyan {
+      filter: drop-shadow(0 0 6px #22d3ee) drop-shadow(0 0 12px #06b6d4);
+    }
+    .neon-green {
+      filter: drop-shadow(0 0 6px #4ade80) drop-shadow(0 0 12px #22c55e);
+    }
+    .neon-island {
+      filter: drop-shadow(0 0 5px #f43f5e) drop-shadow(0 0 10px #fb7185);
+    }
+    .neon-coast {
+      filter: drop-shadow(0 0 5px #38bdf8) drop-shadow(0 0 10px #0284c7);
+    }
+
+    /* 選中項目的呼吸閃爍動畫 */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; stroke-width: 3.5; }
+      50% { opacity: 0.55; stroke-width: 6; }
+    }
+    .selected-feature {
+      animation: pulseGlow 1.5s infinite ease-in-out;
+    }
+
+    /* 地圖標記點懸停互動 */
+    .map-marker {
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.25s ease;
+    }
+    .map-marker:hover {
+      transform: scale(1.12);
+    }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- 頂部導覽與工具列 -->
+  <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 sticky top-0 z-40">
+    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 via-cyan-400 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-slate-950 font-black text-lg">
+          臺
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            臺灣 3D 地形與地質互動探索系統
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">國一地理筆記版</span>
+          </h1>
+          <p class="text-xs text-slate-400 hidden sm:block">點擊地圖上任一地形、海岸或離島，即時檢視地質成因、3D 剖面與等高線判讀</p>
+        </div>
+      </div>
+
+      <!-- 右側功能按鈕群 -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button id="btnToggle3D" onclick="toggle3DView()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs sm:text-sm font-semibold text-cyan-300 flex items-center gap-1.5 transition shadow">
+          <span id="viewIcon">🏔️</span>
+          <span id="viewText">視角：3D 立體傾斜</span>
+        </button>
+
+        <button onclick="openForcesModal()" class="px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-xs sm:text-sm font-semibold text-amber-300 flex items-center gap-1.5 transition">
+          <span>🔥</span>
+          <span>內外營力 & 口訣</span>
+        </button>
+
+        <button onclick="openQuizModal()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 shadow-lg shadow-fuchsia-600/25 transition">
+          <span>🎯</span>
+          <span>隨堂小測驗</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 螢光筆圖層篩選列 -->
+    <div class="max-w-[1600px] mx-auto mt-3 pt-2.5 border-t border-slate-800/80 flex items-center gap-2 overflow-x-auto pb-1">
+      <span class="text-xs text-slate-400 font-semibold whitespace-nowrap mr-1">🖍️ 螢光筆圖層：</span>
+      <button onclick="setFilter('all')" id="filter-all" class="filter-btn active px-3 py-1.5 rounded-full text-xs font-bold bg-white text-slate-950 shadow transition whitespace-nowrap">
+        全部顯示
+      </button>
+      <button onclick="setFilter('mountain')" id="filter-mountain" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/50 hover:bg-fuchsia-500/30 transition whitespace-nowrap">
+        🟣 五大山脈 (山地 ≥1000m)
+      </button>
+      <button onclick="setFilter('hill')" id="filter-hill" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-orange-500/20 text-orange-300 border border-orange-500/50 hover:bg-orange-500/30 transition whitespace-nowrap">
+        🟠 三縣市丘陵 (&lt;1000m)
+      </button>
+      <button onclick="setFilter('tableland')" id="filter-tableland" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-yellow-400/20 text-yellow-300 border border-yellow-400/50 hover:bg-yellow-400/30 transition whitespace-nowrap">
+        🟡 六大臺地 (頂平邊陡)
+      </button>
+      <button onclick="setFilter('basin')" id="filter-basin" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-cyan-400/20 text-cyan-300 border border-cyan-400/50 hover:bg-cyan-400/30 transition whitespace-nowrap">
+        🔵 四大盆地 (中低周高)
+      </button>
+      <button onclick="setFilter('plain')" id="filter-plain" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/50 hover:bg-emerald-400/30 transition whitespace-nowrap">
+        🟢 六大平原 & 河流堆積
+      </button>
+      <button onclick="setFilter('island')" id="filter-island" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50 hover:bg-rose-500/30 transition whitespace-nowrap">
+        🏝️ 離島地質 (大陸/火山/珊瑚礁)
+      </button>
+      <button onclick="setFilter('coast')" id="filter-coast" class="filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/50 hover:bg-sky-500/30 transition whitespace-nowrap">
+        🌊 四種海岸類型
+      </button>
+    </div>
+  </header>
+
+  <!-- 主工作區：左側 3D 互動地圖 + 右側詳細地形與等高線解析 -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 p-4">
+
+    <!-- 左側：3D 臺灣立體螢光地圖舞台 (佔 7 欄) -->
+    <section class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-2xl relative flex flex-col justify-between overflow-hidden min-h-[600px] lg:min-h-[760px] shadow-2xl">
+      
+      <!-- 海洋經緯網格背景與方位標示 -->
+      <div class="absolute inset-0 pointer-events-none opacity-25" style="background-image: radial-gradient(#38bdf8 1px, transparent 1px), linear-gradient(to right, #1e293b 1px, transparent 1px), linear-gradient(to bottom, #1e293b 1px, transparent 1px); background-size: 40px 40px, 80px 80px, 80px 80px;"></div>
+
+      <!-- 頂部浮動提示列 -->
+      <div class="relative z-20 p-3 flex items-center justify-between pointer-events-none">
+        <div class="bg-slate-950/80 backdrop-blur border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 pointer-events-auto flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>點選地圖上的<strong>螢光區塊</strong>或<strong>標籤</strong>查看等高線與筆記</span>
+        </div>
+        <div class="flex items-center gap-1.5 pointer-events-auto">
+          <button onclick="zoomMap(0.12)" title="放大" class="w-8 h-8 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center">+</button>
+          <button onclick="zoomMap(-0.12)" title="縮小" class="w-8 h-8 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold flex items-center justify-center">−</button>
+          <button onclick="resetMap()" title="重設視角" class="px-2.5 h-8 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-xs text-slate-300 font-medium">重設</button>
+        </div>
+      </div>
+
+      <!-- 3D 互動 SVG 地圖容器 -->
+      <div id="mapStage" class="map-stage-wrapper flex-1 flex items-center justify-center relative cursor-grab active:cursor-grabbing select-none p-2">
+        <div id="mapPlane" class="map-3d-plane tilted w-full max-w-[680px]">
+          <svg id="taiwanSvg" viewBox="0 0 760 880" class="w-full h-auto drop-shadow-[0_25px_35px_rgba(0,0,0,0.85)]">
+            <defs>
+              <!-- 海洋深藍漸層 -->
+              <radialGradient id="oceanGlow" cx="50%" cy="50%" r="55%">
+                <stop offset="0%" stop-color="#0c4a6e" stop-opacity="0.45" />
+                <stop offset="100%" stop-color="#090d16" stop-opacity="0" />
+              </radialGradient>
+
+              <!-- 3D 島嶼立體擠出陰影濾鏡 -->
+              <filter id="island3DExtrude" x="-15%" y="-15%" width="135%" height="135%">
+                <feDropShadow dx="8" dy="14" stdDeviation="3" flood-color="#020617" flood-opacity="0.95"/>
+                <feDropShadow dx="4" dy="7" stdDeviation="1" flood-color="#1e293b" flood-opacity="0.9"/>
+              </filter>
+
+              <!-- 山脈立體山脊光澤 -->
+              <linearGradient id="ridgeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f0abfc" />
+                <stop offset="50%" stop-color="#d946ef" />
+                <stop offset="100%" stop-color="#86198f" />
+              </linearGradient>
+
+              <!-- 螢光色半透明填充 -->
+              <linearGradient id="hillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fb923c" stop-opacity="0.72" />
+                <stop offset="100%" stop-color="#ea580c" stop-opacity="0.45" />
+              </linearGradient>
+
+              <linearGradient id="tablelandGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#fef08a" stop-opacity="0.82" />
+                <stop offset="100%" stop-color="#eab308" stop-opacity="0.55" />
+              </linearGradient>
+
+              <radialGradient id="basinGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.25" />
+                <stop offset="75%" stop-color="#22d3ee" stop-opacity="0.75" />
+                <stop offset="100%" stop-color="#67e8f9" stop-opacity="0.95" />
+              </radialGradient>
+
+              <linearGradient id="plainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#4ade80" stop-opacity="0.68" />
+                <stop offset="100%" stop-color="#16a34a" stop-opacity="0.45" />
+              </linearGradient>
+            </defs>
+
+            <!-- 背景海域光暈 -->
+            <ellipse cx="410" cy="440" rx="340" ry="400" fill="url(#oceanGlow)" />
+
+            <!-- 經緯度參考線 (北回歸線 23.5°N) -->
+            <line x1="120" y1="538" x2="660" y2="538" stroke="#38bdf8" stroke-width="1" stroke-dasharray="6,6" opacity="0.45" />
+            <text x="125" y="532" fill="#7dd3fc" font-size="11" opacity="0.75">北回歸線 23.5°N</text>
+
+            <!-- 中國大陸東南沿海輪廓 (供金門、馬祖相對位置參照) -->
+            <path d="M 15,35 L 185,35 Q 175,85 155,115 Q 140,145 120,175 Q 112,215 95,255 Q 72,290 40,335 L 15,335 Z"
+                  fill="#1e293b" stroke="#334155" stroke-width="1.5" opacity="0.75" />
+            <text x="48" y="95" fill="#64748b" font-size="12" font-weight="700" letter-spacing="2">中國大陸沿海</text>
+
+            <!-- ==================== 臺灣本島 3D 基底 ==================== -->
+            <g id="taiwan-main-base" filter="url(#island3DExtrude)">
+              <path id="taiwan-outline"
+                d="M 488,132
+                   L 512,145 L 528,162 L 515,182 L 514,205
+                   L 504,245 L 495,295 L 486,355 L 476,425
+                   L 464,495 L 448,565 L 434,630 L 424,695
+                   L 426,748 L 414,768 L 402,756 L 392,722
+                   L 372,675 L 342,642 L 315,610 L 296,568
+                   L 286,520 L 294,468 L 310,418 L 332,368
+                   L 358,318 L 385,268 L 415,222 L 446,178
+                   L 468,145 Z"
+                fill="#132238" stroke="#475569" stroke-width="2.5" />
+            </g>
+
+            <!-- ==================== 圖層 1：🟢 六大平原 (Plains) ==================== -->
+            <g class="layer-group layer-plain">
+              <!-- 1. 蘭陽平原 (三角形沖積平原) -->
+              <path id="feat-plain-lanyang" onclick="selectFeature('plain_lanyang')"
+                d="M 484,185 L 514,182 L 513,207 L 480,204 Z"
+                fill="url(#plainGrad)" stroke="#4ade80" stroke-width="2" class="map-marker neon-green" />
+
+              <!-- 2. 花東縱谷平原 (夾在中央山脈與海岸山脈之間狹長谷地) -->
+              <path id="feat-plain-huadong" onclick="selectFeature('plain_huadong')"
+                d="M 485,335 L 494,338 L 463,562 L 451,558 Z"
+                fill="url(#plainGrad)" stroke="#4ade80" stroke-width="2" class="map-marker neon-green" />
+
+              <!-- 6. 彰化平原 (大肚溪以南、濁水溪以北，花卉) -->
+              <path id="feat-plain-changhua" onclick="selectFeature('plain_changhua')"
+                d="M 326,382 L 356,385 L 348,430 L 306,426 Z"
+                fill="url(#plainGrad)" stroke="#4ade80" stroke-width="2" class="map-marker neon-green" />
+
+              <!-- 5. 雲林平原 (濁水溪以南、北港溪以北，蔬果) -->
+              <path id="feat-plain-yunlin" onclick="selectFeature('plain_yunlin')"
+                d="M 306,428 L 348,432 L 344,474 L 293,470 Z"
+                fill="url(#plainGrad)" stroke="#4ade80" stroke-width="2" class="map-marker neon-green" />
+
+              <!-- 4. 嘉南平原 (最大平原，西拉雅族) -->
+              <path id="feat-plain-chianan" onclick="selectFeature('plain_chianan')"
+                d="M 293,472 L 345,476 L 352,555 L 336,612 L 314,606 L 295,565 L 287,520 Z"
+                fill="url(#plainGrad)" stroke="#4ade80" stroke-width="2" class="map-marker neon-green" />
+
+              <!-- 3. 屏東平原 -->
+              <path id="feat-plain-pingtung" onclick="selectFeature('plain_pingtung')"
+                d="M 345,602 L 382,605 L 392,682 L 372,675 L 342,640 Z"
+                fill="url(#plainGrad)" stroke="#4ade80" stroke-width="2" class="map-marker neon-green" />
+            </g>
+
+            <!-- ==================== 圖層 2：🟠 桃竹苗丘陵 (Hills) ==================== -->
+            <g class="layer-group layer-hill">
+              <path id="feat-hill-taozhumiao" onclick="selectFeature('hill_taozhumiao')"
+                d="M 412,226 L 444,234 L 424,295 L 398,332 L 368,325 L 385,274 Z"
+                fill="url(#hillGrad)" stroke="#fb923c" stroke-width="2.2" class="map-marker neon-orange" />
+            </g>
+
+            <!-- ==================== 圖層 3：🟡 六大臺地 (Tablelands) ==================== -->
+            <g class="layer-group layer-tableland">
+              <!-- 1. 林口臺地 -->
+              <path id="feat-tab-linkou" onclick="selectFeature('tab_linkou')"
+                d="M 442,168 L 465,166 L 463,192 L 434,192 Z"
+                fill="url(#tablelandGrad)" stroke="#fde047" stroke-width="2" class="map-marker neon-yellow" />
+
+              <!-- 2. 桃園臺地 (多埤塘) -->
+              <path id="feat-tab-taoyuan" onclick="selectFeature('tab_taoyuan')"
+                d="M 416,196 L 456,195 L 446,230 L 406,222 Z"
+                fill="url(#tablelandGrad)" stroke="#fde047" stroke-width="2" class="map-marker neon-yellow" />
+
+              <!-- 3. 大肚臺地 -->
+              <path id="feat-tab-dadu" onclick="selectFeature('tab_dadu')"
+                d="M 340,342 L 358,342 L 354,376 L 334,375 Z"
+                fill="url(#tablelandGrad)" stroke="#fde047" stroke-width="2" class="map-marker neon-yellow" />
+
+              <!-- 4. 八卦臺地 -->
+              <path id="feat-tab-bagua" onclick="selectFeature('tab_bagua')"
+                d="M 356,385 L 372,386 L 368,434 L 350,432 Z"
+                fill="url(#tablelandGrad)" stroke="#fde047" stroke-width="2" class="map-marker neon-yellow" />
+
+              <!-- 5. 恆春半島 (三面環海一面連接陸地) -->
+              <path id="feat-tab-hengchun" onclick="selectFeature('tab_hengchun')"
+                d="M 392,704 L 424,704 L 426,748 L 414,768 L 402,756 L 392,722 Z"
+                fill="url(#tablelandGrad)" stroke="#fde047" stroke-width="2.2" class="map-marker neon-yellow" />
+            </g>
+
+            <!-- ==================== 圖層 4：🔵 四大盆地 (Basins) ==================== -->
+            <g class="layer-group layer-basin">
+              <!-- 1. 臺北盆地 -->
+              <ellipse id="feat-basin-taipei" onclick="selectFeature('basin_taipei')"
+                cx="478" cy="168" rx="16" ry="13"
+                fill="url(#basinGrad)" stroke="#22d3ee" stroke-width="2.5" class="map-marker neon-cyan" />
+
+              <!-- 2. 臺中盆地 -->
+              <ellipse id="feat-basin-taichung" onclick="selectFeature('basin_taichung')"
+                cx="374" cy="364" rx="15" ry="22"
+                fill="url(#basinGrad)" stroke="#22d3ee" stroke-width="2.5" class="map-marker neon-cyan" />
+
+              <!-- 3. 埔里盆地 (南投) -->
+              <circle id="feat-basin-puli" onclick="selectFeature('basin_puli')"
+                cx="408" cy="395" r="12"
+                fill="url(#basinGrad)" stroke="#22d3ee" stroke-width="2.5" class="map-marker neon-cyan" />
+
+              <!-- 4. 泰源盆地 (臺東海岸山脈南段內側) -->
+              <ellipse id="feat-basin-taiyuan" onclick="selectFeature('basin_taiyuan')"
+                cx="464" cy="575" rx="7" ry="15" transform="rotate(14 464 575)"
+                fill="url(#basinGrad)" stroke="#22d3ee" stroke-width="2.3" class="map-marker neon-cyan" />
+            </g>
+
+            <!-- ==================== 圖層 5：🟣 五大山脈 (Mountains ≥1000m) ==================== -->
+            <g class="layer-group layer-mountain">
+              <!-- 一、雪山山脈 (東北-西南走向，國五雪隧貫穿) -->
+              <path id="feat-mt-xueshan" onclick="selectFeature('mt_xueshan')"
+                d="M 505,156 L 468,208 L 434,272 L 406,332"
+                fill="none" stroke="url(#ridgeGrad)" stroke-width="11" stroke-linecap="round"
+                class="map-marker neon-magenta" />
+              <!-- 山脈脊線高光 -->
+              <path d="M 505,156 L 468,208 L 434,272 L 406,332"
+                fill="none" stroke="#fdf4ff" stroke-width="2" stroke-dasharray="6,4" pointer-events="none" />
+
+              <!-- 二、中央山脈 (北起蘇澳，南到恆春鵝鑾鼻) -->
+              <path id="feat-mt-central" onclick="selectFeature('mt_central')"
+                d="M 508,214 L 478,285 L 456,375 L 438,475 L 418,585 L 408,695"
+                fill="none" stroke="url(#ridgeGrad)" stroke-width="14" stroke-linecap="round"
+                class="map-marker neon-magenta" />
+              <path d="M 508,214 L 478,285 L 456,375 L 438,475 L 418,585 L 408,695"
+                fill="none" stroke="#fdf4ff" stroke-width="2.2" stroke-dasharray="8,4" pointer-events="none" />
+
+              <!-- 三、海岸山脈 (地質年代較年輕，花東縱谷東側) -->
+              <path id="feat-mt-coastal" onclick="selectFeature('mt_coastal')"
+                d="M 498,342 L 484,445 L 468,548"
+                fill="none" stroke="url(#ridgeGrad)" stroke-width="8.5" stroke-linecap="round"
+                class="map-marker neon-magenta" />
+
+              <!-- 四、玉山山脈 (中央山脈西側中段，八通關古道、布農族) -->
+              <path id="feat-mt-yushan" onclick="selectFeature('mt_yushan')"
+                d="M 424,425 L 412,482 L 395,542"
+                fill="none" stroke="url(#ridgeGrad)" stroke-width="10" stroke-linecap="round"
+                class="map-marker neon-magenta" />
+
+              <!-- 五、阿里山山脈 (玉山山脈西側，地質年代較古老、鄒族) -->
+              <path id="feat-mt-alishan" onclick="selectFeature('mt_alishan')"
+                d="M 392,438 L 378,495 L 364,552"
+                fill="none" stroke="url(#ridgeGrad)" stroke-width="9" stroke-linecap="round"
+                class="map-marker neon-magenta" />
+            </g>
+
+            <!-- ==================== 圖層 6：🌊 四種海岸類型 (4 Coastal Types) ==================== -->
+            <g class="layer-group layer-coast">
+              <!-- ① 北部：山地灣澳海岸 (岩岸，基隆港、蘇澳港) -->
+              <path id="feat-coast-north" onclick="selectFeature('coast_north')"
+                d="M 452,155 L 488,128 L 515,144 L 530,162 L 515,184"
+                fill="none" stroke="#38bdf8" stroke-width="4.5" stroke-dasharray="5,3"
+                class="map-marker neon-coast" />
+
+              <!-- ② 東部：斷層海岸 (岩岸，平直缺灣澳，花蓮港) -->
+              <path id="feat-coast-east" onclick="selectFeature('coast_east')"
+                d="M 514,212 L 496,335 L 476,465 L 452,590"
+                fill="none" stroke="#818cf8" stroke-width="4.5"
+                class="map-marker neon-coast" />
+
+              <!-- ③ 南部：珊瑚礁海岸 (岩岸，恆春半島) -->
+              <path id="feat-coast-south" onclick="selectFeature('coast_south')"
+                d="M 388,718 L 402,760 L 414,772 L 428,750 L 428,708"
+                fill="none" stroke="#f472b6" stroke-width="4.5" stroke-dasharray="3,3"
+                class="map-marker neon-coast" />
+
+              <!-- ④ 西部：沙洲、潟湖海岸 (沙岸，養殖業) -->
+              <path id="feat-coast-west" onclick="selectFeature('coast_west')"
+                d="M 322,380 L 298,435 L 281,515 L 291,572 L 328,625"
+                fill="none" stroke="#fbbf24" stroke-width="4.5" stroke-dasharray="8,3"
+                class="map-marker neon-coast" />
+            </g>
+
+            <!-- ==================== 圖層 7：🏝️ 周邊離島 (精準地理位置修正！) ==================== -->
+            <g class="layer-group layer-island">
+              
+              <!-- 【大陸島 1】馬祖列島 (連江縣，位於臺北市西北方、閩江口外，最北為北竿/東引) -->
+              <g id="feat-isl-matsu" onclick="selectFeature('isl_matsu')" class="map-marker neon-island">
+                <circle cx="212" cy="84" r="4" fill="#fb7185" />
+                <circle cx="204" cy="94" r="5" fill="#fb7185" />
+                <circle cx="192" cy="115" r="3.5" fill="#fb7185" />
+                <rect x="174" y="68" width="60" height="58" rx="10" fill="none" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【大陸島 2】金門列島 (花崗岩，位於廈門灣外、臺灣海峽西側) -->
+              <g id="feat-isl-kinmen" onclick="selectFeature('isl_kinmen')" class="map-marker neon-island">
+                <path d="M 108,266 L 126,264 L 128,274 L 106,275 Z" fill="#fb7185" />
+                <circle cx="99" cy="272" r="3.5" fill="#fb7185" />
+                <rect x="88" y="254" width="52" height="32" rx="8" fill="none" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【火山島 1 + 臺地 6】澎湖群島 (玄武岩平臺狀，位於臺灣海峽中南部、嘉南外海) -->
+              <g id="feat-isl-penghu" onclick="selectFeature('isl_penghu')" class="map-marker neon-yellow">
+                <path d="M 206,445 L 218,442 L 220,456 L 208,458 Z" fill="#fde047" />
+                <circle cx="201" cy="452" r="4" fill="#fde047" />
+                <circle cx="212" cy="468" r="4.5" fill="#fde047" />
+                <rect x="190" y="432" width="42" height="48" rx="10" fill="none" stroke="#fde047" stroke-width="1.4" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【珊瑚礁島 4】澎湖南方四島 (東吉、西吉、東嶼坪、西嶼坪，位於澎湖本島南方) -->
+              <g id="feat-isl-south4" onclick="selectFeature('isl_south4')" class="map-marker neon-island">
+                <circle cx="206" cy="495" r="2.8" fill="#22d3ee" />
+                <circle cx="215" cy="496" r="2.8" fill="#22d3ee" />
+                <circle cx="208" cy="503" r="2.5" fill="#22d3ee" />
+                <circle cx="216" cy="503" r="2.5" fill="#22d3ee" />
+              </g>
+
+              <!-- 【火山島 2】釣魚臺列嶼 (修正位置！位於臺灣東北方遠海，約基隆東北方 170 公里處) -->
+              <g id="feat-isl-diaoyutai" onclick="selectFeature('isl_diaoyutai')" class="map-marker neon-island">
+                <polygon points="658,64 667,69 661,76 653,72" fill="#f97316" stroke="#fed7aa" stroke-width="1" />
+                <circle cx="674" cy="68" r="2.5" fill="#f97316" />
+                <circle cx="680" cy="63" r="2" fill="#f97316" />
+                <circle cx="666" cy="69" r="19" fill="none" stroke="#fb923c" stroke-width="1.3" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【火山島 3】龜山島 (修正位置！位於宜蘭頭城外海約 10 公里，形似浮龜) -->
+              <g id="feat-isl-guishan" onclick="selectFeature('isl_guishan')" class="map-marker neon-island">
+                <path d="M 544,186 Q 552,181 558,187 Q 553,192 544,189 Z" fill="#f97316" stroke="#fed7aa" stroke-width="1" />
+                <circle cx="551" cy="187" r="13" fill="none" stroke="#fb923c" stroke-width="1.3" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【火山島 4】綠島 (臺東外海，海底溫泉) -->
+              <g id="feat-isl-green" onclick="selectFeature('isl_green')" class="map-marker neon-island">
+                <polygon points="528,622 537,625 535,635 525,632" fill="#f97316" stroke="#fed7aa" stroke-width="1" />
+                <circle cx="531" cy="628" r="13" fill="none" stroke="#fb923c" stroke-width="1.3" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【火山島 5】蘭嶼 (臺東東南方外海，達悟族) -->
+              <g id="feat-isl-orchid" onclick="selectFeature('isl_orchid')" class="map-marker neon-island">
+                <polygon points="544,704 556,708 553,722 541,717" fill="#f97316" stroke="#fed7aa" stroke-width="1" />
+                <circle cx="548" cy="713" r="15" fill="none" stroke="#fb923c" stroke-width="1.3" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【珊瑚礁島 1】琉球嶼 / 小琉球 (屏東西南方外海) -->
+              <g id="feat-isl-liuqiu" onclick="selectFeature('isl_liuqiu')" class="map-marker neon-island">
+                <ellipse cx="328" cy="662" rx="6" ry="4" transform="rotate(-25 328 662)" fill="#22d3ee" stroke="#cffafe" stroke-width="1" />
+                <circle cx="328" cy="662" r="12" fill="none" stroke="#22d3ee" stroke-width="1.3" stroke-dasharray="3,2" />
+              </g>
+
+              <!-- 【南海珊瑚礁島附圖框】東沙島 & 太平島 (修正位置！置於右下角南海附圖框，標明真實方位) -->
+              <g id="feat-isl-southsea" onclick="selectFeature('isl_southsea')" class="map-marker">
+                <rect x="556" y="758" width="186" height="106" rx="12" fill="#0f172a" fill-opacity="0.92" stroke="#22d3ee" stroke-width="1.5" />
+                <line x1="556" y1="782" x2="742" y2="782" stroke="#1e293b" stroke-width="1" />
+                <text x="568" y="774" fill="#67e8f9" font-size="11" font-weight="700">🧭 南海珊瑚礁島（附圖）</text>
+                
+                <!-- 東沙環礁 -->
+                <circle cx="595" cy="814" r="11" fill="none" stroke="#22d3ee" stroke-width="2" stroke-dasharray="4,2" />
+                <circle cx="585" cy="814" r="2.5" fill="#22d3ee" />
+                <text x="572" y="839" fill="#e2e8f0" font-size="11" font-weight="700">東沙島</text>
+                <text x="567" y="853" fill="#94a3b8" font-size="9.5">高雄西南方</text>
+
+                <!-- 太平島 (南沙群島) -->
+                <ellipse cx="685" cy="814" rx="10" ry="4" transform="rotate(-20 685 814)" fill="#22d3ee" />
+                <text x="665" y="839" fill="#e2e8f0" font-size="11" font-weight="700">太平島</text>
+                <text x="653" y="853" fill="#94a3b8" font-size="9.5">南沙/最南端</text>
+              </g>
+            </g>
+
+            <!-- ==================== 地圖清晰無重疊標籤層 ==================== -->
+            <g id="map-labels" font-size="12" font-weight="700" class="select-none">
+              
+              <!-- 離島標籤 -->
+              <g onclick="selectFeature('isl_matsu')" class="cursor-pointer">
+                <rect x="238" y="78" width="108" height="34" rx="7" fill="#0f172a" stroke="#fb7185" stroke-width="1.2" />
+                <text x="246" y="93" fill="#fda4af" font-size="11.5">馬祖 (連江縣)</text>
+                <text x="246" y="106" fill="#cbd5e1" font-size="9.5">大陸島・最北北竿</text>
+              </g>
+
+              <g onclick="selectFeature('isl_kinmen')" class="cursor-pointer">
+                <rect x="38" y="292" width="108" height="34" rx="7" fill="#0f172a" stroke="#fb7185" stroke-width="1.2" />
+                <text x="46" y="307" fill="#fda4af" font-size="11.5">金門列島</text>
+                <text x="46" y="320" fill="#cbd5e1" font-size="9.5">大陸島・花崗岩</text>
+              </g>
+
+              <g onclick="selectFeature('isl_diaoyutai')" class="cursor-pointer">
+                <line x1="650" y1="78" x2="625" y2="95" stroke="#fb923c" stroke-width="1.2" />
+                <rect x="562" y="95" width="118" height="34" rx="7" fill="#0f172a" stroke="#fb923c" stroke-width="1.2" />
+                <text x="570" y="110" fill="#fdba74" font-size="11.5">② 釣魚臺列嶼</text>
+                <text x="570" y="123" fill="#cbd5e1" font-size="9.5">火山島・臺灣東北方</text>
+              </g>
+
+              <g onclick="selectFeature('isl_guishan')" class="cursor-pointer">
+                <line x1="564" y1="187" x2="588" y2="187" stroke="#fb923c" stroke-width="1.2" />
+                <rect x="588" y="170" width="114" height="34" rx="7" fill="#0f172a" stroke="#fb923c" stroke-width="1.2" />
+                <text x="596" y="185" fill="#fdba74" font-size="11.5">③ 龜山島 (宜蘭)</text>
+                <text x="596" y="198" fill="#cbd5e1" font-size="9.5">火山島・活火山</text>
+              </g>
+
+              <g onclick="selectFeature('isl_penghu')" class="cursor-pointer">
+                <rect x="86" y="425" width="98" height="36" rx="7" fill="#0f172a" stroke="#fde047" stroke-width="1.2" />
+                <text x="94" y="440" fill="#fef08a" font-size="11.5">① 澎湖群島</text>
+                <text x="94" y="453" fill="#cbd5e1" font-size="9.5">火山島・玄武岩臺地</text>
+              </g>
+
+              <g onclick="selectFeature('isl_south4')" class="cursor-pointer">
+                <line x1="204" y1="498" x2="184" y2="502" stroke="#22d3ee" stroke-width="1.2" />
+                <rect x="82" y="486" width="102" height="32" rx="7" fill="#0f172a" stroke="#22d3ee" stroke-width="1.2" />
+                <text x="90" y="500" fill="#67e8f9" font-size="11">澎湖南方四島</text>
+                <text x="90" y="512" fill="#cbd5e1" font-size="9.5">珊瑚礁島</text>
+              </g>
+
+              <g onclick="selectFeature('isl_liuqiu')" class="cursor-pointer">
+                <line x1="316" y1="662" x2="292" y2="662" stroke="#22d3ee" stroke-width="1.2" />
+                <rect x="190" y="646" width="102" height="32" rx="7" fill="#0f172a" stroke="#22d3ee" stroke-width="1.2" />
+                <text x="198" y="660" fill="#67e8f9" font-size="11">琉球嶼 (小琉球)</text>
+                <text x="198" y="672" fill="#cbd5e1" font-size="9.5">珊瑚礁島</text>
+              </g>
+
+              <g onclick="selectFeature('isl_green')" class="cursor-pointer">
+                <line x1="544" y1="628" x2="572" y2="628" stroke="#fb923c" stroke-width="1.2" />
+                <rect x="572" y="611" width="112" height="34" rx="7" fill="#0f172a" stroke="#fb923c" stroke-width="1.2" />
+                <text x="580" y="626" fill="#fdba74" font-size="11.5">④ 綠島</text>
+                <text x="580" y="639" fill="#cbd5e1" font-size="9.5">火山島・海底溫泉</text>
+              </g>
+
+              <g onclick="selectFeature('isl_orchid')" class="cursor-pointer">
+                <line x1="563" y1="713" x2="586" y2="713" stroke="#fb923c" stroke-width="1.2" />
+                <rect x="586" y="696" width="112" height="34" rx="7" fill="#0f172a" stroke="#fb923c" stroke-width="1.2" />
+                <text x="594" y="711" fill="#fdba74" font-size="11.5">⑤ 蘭嶼</text>
+                <text x="594" y="724" fill="#cbd5e1" font-size="9.5">火山島・達悟族</text>
+              </g>
+
+              <!-- 本島主要地形標籤 (左側引線與右側引線錯開排列，杜絕重疊) -->
+              <!-- 臺北盆地 -->
+              <g onclick="selectFeature('basin_taipei')" class="cursor-pointer">
+                <line x1="478" y1="155" x2="452" y2="118" stroke="#22d3ee" stroke-width="1.2" />
+                <rect x="386" y="95" width="84" height="24" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.2" />
+                <text x="396" y="111" fill="#67e8f9" font-size="11.5">臺北盆地</text>
+              </g>
+
+              <!-- 林口臺地 -->
+              <g onclick="selectFeature('tab_linkou')" class="cursor-pointer">
+                <line x1="436" y1="178" x2="388" y2="152" stroke="#fde047" stroke-width="1.2" />
+                <rect x="304" y="140" width="84" height="24" rx="6" fill="#0f172a" stroke="#fde047" stroke-width="1.2" />
+                <text x="314" y="156" fill="#fef08a" font-size="11.5">林口臺地</text>
+              </g>
+
+              <!-- 桃園臺地 -->
+              <g onclick="selectFeature('tab_taoyuan')" class="cursor-pointer">
+                <line x1="412" y1="208" x2="365" y2="195" stroke="#fde047" stroke-width="1.2" />
+                <rect x="256" y="182" width="110" height="24" rx="6" fill="#0f172a" stroke="#fde047" stroke-width="1.2" />
+                <text x="264" y="198" fill="#fef08a" font-size="11.5">桃園臺地 (埤塘)</text>
+              </g>
+
+              <!-- 桃竹苗丘陵 -->
+              <g onclick="selectFeature('hill_taozhumiao')" class="cursor-pointer">
+                <line x1="382" y1="275" x2="335" y2="255" stroke="#fb923c" stroke-width="1.2" />
+                <rect x="205" y="242" width="130" height="26" rx="6" fill="#0f172a" stroke="#fb923c" stroke-width="1.2" />
+                <text x="213" y="259" fill="#fdba74" font-size="11.5">桃竹苗丘陵 (客家梯田)</text>
+              </g>
+
+              <!-- 大肚 & 臺中盆地 & 八卦臺地 -->
+              <g onclick="selectFeature('tab_dadu')" class="cursor-pointer">
+                <line x1="336" y1="355" x2="292" y2="335" stroke="#fde047" stroke-width="1.2" />
+                <rect x="208" y="322" width="84" height="24" rx="6" fill="#0f172a" stroke="#fde047" stroke-width="1.2" />
+                <text x="218" y="338" fill="#fef08a" font-size="11.5">大肚臺地</text>
+              </g>
+
+              <g onclick="selectFeature('basin_taichung')" class="cursor-pointer">
+                <line x1="368" y1="364" x2="292" y2="364" stroke="#22d3ee" stroke-width="1.2" />
+                <rect x="208" y="352" width="84" height="24" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.2" />
+                <text x="218" y="368" fill="#67e8f9" font-size="11.5">臺中盆地</text>
+              </g>
+
+              <g onclick="selectFeature('tab_bagua')" class="cursor-pointer">
+                <line x1="352" y1="402" x2="292" y2="394" stroke="#fde047" stroke-width="1.2" />
+                <rect x="208" y="382" width="84" height="24" rx="6" fill="#0f172a" stroke="#fde047" stroke-width="1.2" />
+                <text x="218" y="398" fill="#fef08a" font-size="11.5">八卦臺地</text>
+              </g>
+
+              <!-- 彰化 & 雲林 & 嘉南 & 屏東平原 -->
+              <g onclick="selectFeature('plain_changhua')" class="cursor-pointer">
+                <line x1="312" y1="418" x2="265" y2="424" stroke="#4ade80" stroke-width="1.2" />
+                <rect x="165" y="412" width="100" height="24" rx="6" fill="#0f172a" stroke="#4ade80" stroke-width="1.2" />
+                <text x="172" y="428" fill="#86efac" font-size="11">彰化平原 (花卉)</text>
+              </g>
+
+              <g onclick="selectFeature('plain_yunlin')" class="cursor-pointer">
+                <line x1="298" y1="454" x2="265" y2="462" stroke="#4ade80" stroke-width="1.2" />
+                <rect x="165" y="450" width="100" height="24" rx="6" fill="#0f172a" stroke="#4ade80" stroke-width="1.2" />
+                <text x="172" y="466" fill="#86efac" font-size="11">雲林平原 (蔬果)</text>
+              </g>
+
+              <g onclick="selectFeature('plain_chianan')" class="cursor-pointer">
+                <line x1="296" y1="548" x2="255" y2="555" stroke="#4ade80" stroke-width="1.2" />
+                <rect x="148" y="543" width="108" height="24" rx="6" fill="#0f172a" stroke="#4ade80" stroke-width="1.2" />
+                <text x="155" y="559" fill="#86efac" font-size="11">嘉南平原 (西拉雅)</text>
+              </g>
+
+              <g onclick="selectFeature('plain_pingtung')" class="cursor-pointer">
+                <line x1="356" y1="628" x2="292" y2="612" stroke="#4ade80" stroke-width="1.2" />
+                <rect x="208" y="600" width="84" height="24" rx="6" fill="#0f172a" stroke="#4ade80" stroke-width="1.2" />
+                <text x="218" y="616" fill="#86efac" font-size="11.5">屏東平原</text>
+              </g>
+
+              <!-- 恆春半島 -->
+              <g onclick="selectFeature('tab_hengchun')" class="cursor-pointer">
+                <line x1="406" y1="742" x2="352" y2="755" stroke="#fde047" stroke-width="1.2" />
+                <rect x="242" y="743" width="110" height="24" rx="6" fill="#0f172a" stroke="#fde047" stroke-width="1.2" />
+                <text x="250" y="759" fill="#fef08a" font-size="11.5">恆春半島 (臺地)</text>
+              </g>
+
+              <!-- 東側引線標籤：蘭陽平原、雪山、中央、埔里、海岸、玉山、阿里山、花東縱谷、泰源 -->
+              <g onclick="selectFeature('plain_lanyang')" class="cursor-pointer">
+                <line x1="510" y1="196" x2="555" y2="225" stroke="#4ade80" stroke-width="1.2" />
+                <rect x="555" y="213" width="84" height="24" rx="6" fill="#0f172a" stroke="#4ade80" stroke-width="1.2" />
+                <text x="565" y="229" fill="#86efac" font-size="11.5">蘭陽平原</text>
+              </g>
+
+              <g onclick="selectFeature('mt_xueshan')" class="cursor-pointer">
+                <line x1="468" y1="215" x2="555" y2="262" stroke="#e879f9" stroke-width="1.2" />
+                <rect x="555" y="250" width="116" height="24" rx="6" fill="#0f172a" stroke="#e879f9" stroke-width="1.2" />
+                <text x="563" y="266" fill="#f5d0fe" font-size="11.5">一、雪山山脈</text>
+              </g>
+
+              <g onclick="selectFeature('mt_central')" class="cursor-pointer">
+                <line x1="472" y1="305" x2="555" y2="305" stroke="#e879f9" stroke-width="1.2" />
+                <rect x="555" y="293" width="116" height="24" rx="6" fill="#0f172a" stroke="#e879f9" stroke-width="1.2" />
+                <text x="563" y="309" fill="#f5d0fe" font-size="11.5">二、中央山脈</text>
+              </g>
+
+              <g onclick="selectFeature('basin_puli')" class="cursor-pointer">
+                <line x1="418" y1="395" x2="555" y2="352" stroke="#22d3ee" stroke-width="1.2" />
+                <rect x="555" y="340" width="104" height="24" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.2" />
+                <text x="563" y="356" fill="#67e8f9" font-size="11.5">埔里盆地 (南投)</text>
+              </g>
+
+              <g onclick="selectFeature('mt_coastal')" class="cursor-pointer">
+                <line x1="490" y1="415" x2="555" y2="395" stroke="#e879f9" stroke-width="1.2" />
+                <rect x="555" y="383" width="116" height="24" rx="6" fill="#0f172a" stroke="#e879f9" stroke-width="1.2" />
+                <text x="563" y="399" fill="#f5d0fe" font-size="11.5">三、海岸山脈</text>
+              </g>
+
+              <g onclick="selectFeature('plain_huadong')" class="cursor-pointer">
+                <line x1="472" y1="452" x2="555" y2="438" stroke="#4ade80" stroke-width="1.2" />
+                <rect x="555" y="426" width="116" height="24" rx="6" fill="#0f172a" stroke="#4ade80" stroke-width="1.2" />
+                <text x="563" y="442" fill="#86efac" font-size="11.5">花東縱谷平原</text>
+              </g>
+
+              <g onclick="selectFeature('mt_yushan')" class="cursor-pointer">
+                <line x1="415" y1="478" x2="555" y2="480" stroke="#e879f9" stroke-width="1.2" />
+                <rect x="555" y="468" width="116" height="24" rx="6" fill="#0f172a" stroke="#e879f9" stroke-width="1.2" />
+                <text x="563" y="484" fill="#f5d0fe" font-size="11.5">四、玉山山脈</text>
+              </g>
+
+              <g onclick="selectFeature('mt_alishan')" class="cursor-pointer">
+                <line x1="378" y1="518" x2="555" y2="522" stroke="#e879f9" stroke-width="1.2" />
+                <rect x="555" y="510" width="124" height="24" rx="6" fill="#0f172a" stroke="#e879f9" stroke-width="1.2" />
+                <text x="563" y="526" fill="#f5d0fe" font-size="11.5">五、阿里山山脈</text>
+              </g>
+
+              <g onclick="selectFeature('basin_taiyuan')" class="cursor-pointer">
+                <line x1="468" y1="575" x2="555" y2="565" stroke="#22d3ee" stroke-width="1.2" />
+                <rect x="555" y="553" width="104" height="24" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.2" />
+                <text x="563" y="569" fill="#67e8f9" font-size="11.5">泰源盆地 (臺東)</text>
+              </g>
+
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 左下角快速分類按鈕列 (海岸與河流堆積) -->
+      <div class="relative z-20 p-3 bg-slate-950/85 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-slate-400 font-semibold">🌊 海岸與堆積快速切換：</span>
+          <button onclick="selectFeature('coast_north')" class="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 transition">① 北部灣澳</button>
+          <button onclick="selectFeature('coast_east')" class="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 transition">② 東部斷層</button>
+          <button onclick="selectFeature('coast_south')" class="px-2.5 py-1 rounded-lg bg-pink-500/15 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 transition">③ 南部珊瑚礁</button>
+          <button onclick="selectFeature('coast_west')" class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition">④ 西部沙洲潟湖</button>
+          <button onclick="selectFeature('river_deposit')" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition">🏞️ 沖積扇 vs 三角洲</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右側：地形詳細解析、3D 剖面與等高線動態模擬面板 (佔 5 欄) -->
+    <aside class="lg:col-span-5 flex flex-col gap-4">
+      
+      <!-- 卡片 A：選中地形的課堂筆記解析 -->
+      <div id="detailCard" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl transition-all">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2 mb-1.5">
+              <span id="detailBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40">
+                🟣 五大山脈｜山地
+              </span>
+              <span id="detailHeightTag" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
+                相對高度 ≥ 1000 m
+              </span>
+            </div>
+            <h2 id="detailTitle" class="text-2xl font-black text-white tracking-tight">
+              二、中央山脈
+            </h2>
+          </div>
+          <div id="detailEmoji" class="w-12 h-12 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl shadow-inner">
+            ⛰️
+          </div>
+        </div>
+
+        <p id="detailSubtitle" class="text-sm text-cyan-300 font-medium mt-2">
+          臺灣的「屋脊」，北起宜蘭蘇澳，南到屏東恆春鵝鑾鼻。
+        </p>
+
+        <!-- 筆記重點條列 -->
+        <div class="mt-4 space-y-2.5 bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5">
+          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">📌 補習班筆記核心考點</div>
+          <ul id="detailPoints" class="space-y-2 text-sm text-slate-200 leading-relaxed">
+            <!-- JS 動態填入 -->
+          </ul>
+        </div>
+
+        <!-- 同類別快速切換標籤 -->
+        <div class="mt-4">
+          <div class="text-xs text-slate-400 mb-2 font-semibold">🔄 同系列地形快速切換：</div>
+          <div id="siblingChips" class="flex flex-wrap gap-1.5">
+            <!-- JS 動態填入 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 B：3D 地形剖面 vs 2D 等高線判讀模擬器 -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>📐</span>
+              <span>3D 剖面圖 ↔ 等高線表現對照</span>
+            </h3>
+            <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">段考必考圖解</span>
+          </div>
+
+          <!-- 雙視窗對照畫布 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- 左盒：3D 地形側視剖面 -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center">
+              <div class="text-xs font-bold text-amber-300 mb-1 w-full flex justify-between">
+                <span>1. 地形立體剖面</span>
+                <span id="profileLabel" class="text-slate-400 font-normal">中間高聳</span>
+              </div>
+              <svg id="profileSvg" viewBox="0 0 220 130" class="w-full h-32">
+                <!-- JS 動態繪製剖面 -->
+              </svg>
+            </div>
+
+            <!-- 右盒：俯視等高線圖 -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center">
+              <div class="text-xs font-bold text-cyan-300 mb-1 w-full flex justify-between">
+                <span>2. 俯視等高線圖</span>
+                <span id="contourLabel" class="text-slate-400 font-normal">密集同心圓</span>
+              </div>
+              <svg id="contourSvg" viewBox="0 0 220 130" class="w-full h-32">
+                <!-- JS 動態繪製等高線 -->
+              </svg>
+            </div>
+          </div>
+
+          <!-- 等高線判讀口訣與解析 -->
+          <div class="mt-3 bg-indigo-950/30 border border-indigo-500/30 rounded-xl p-3">
+            <div class="text-xs font-bold text-indigo-300 mb-1">💡 等高線判讀關鍵：</div>
+            <p id="contourExplain" class="text-xs sm:text-sm text-slate-200 leading-relaxed">
+              等高線呈閉合曲線，越往中心數值越高；坡度陡峭處線條密集，山脊處等高線會向低處突出（V 字尖端指向低處）。
+            </p>
+          </div>
+        </div>
+
+        <!-- 三大火山群補充提示列 -->
+        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+          <span>🌋 三大火山群：澎湖(玄武岩)、基隆、大屯(陽明山/安山岩)</span>
+          <button onclick="selectFeature('volcano_groups')" class="text-amber-400 hover:underline font-semibold whitespace-nowrap ml-2">查看詳情 →</button>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- ==================== 彈窗 1：內外營力 & 記憶口訣 ==================== -->
+  <div id="forcesModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeModal('forcesModal')" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+      <h3 class="text-xl font-black text-white flex items-center gap-2">
+        <span>🔥</span> 兩種營力塑造地貌 & 老師記憶口訣
+      </h3>
+      <p class="text-xs text-slate-400 mt-1">國一地理第一單元核心觀念總整理</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div class="bg-rose-950/30 border border-rose-500/40 rounded-xl p-4">
+          <div class="text-base font-bold text-rose-300 mb-1">🔥 內營力（長痘痘）</div>
+          <p class="text-xs text-slate-300 mb-2">作用：<strong>增加</strong>地表起伏，使地勢變高或崎嶇。</p>
+          <ul class="text-xs text-slate-200 space-y-1 list-disc list-inside">
+            <li>1. 板塊運動（歐亞板塊與菲律賓海板塊擠壓）</li>
+            <li>2. 造山運動</li>
+            <li>3. 火山運動</li>
+            <li>4. 斷層作用</li>
+            <li>5. 褶曲作用</li>
+          </ul>
+        </div>
+
+        <div class="bg-cyan-950/30 border border-cyan-500/40 rounded-xl p-4">
+          <div class="text-base font-bold text-cyan-300 mb-1">🌧️ 外營力（擠痘痘）</div>
+          <p class="text-xs text-slate-300 mb-2">作用：<strong>夷平</strong>地表起伏，使地表逐漸趨於平緩。</p>
+          <ul class="text-xs text-slate-200 space-y-1 list-disc list-inside">
+            <li>1. <strong>風化</strong>：岩石在原地碎裂變質（物質<strong>不會</strong>離開原地）</li>
+            <li>2. <strong>侵蝕</strong>：風、河水、冰河等帶走碎屑（物質<strong>會</strong>離開原地）</li>
+            <li>3. <strong>堆積</strong>：搬運力量減弱時沉積（如沖積扇、三角洲）</li>
+            <li>4. <strong>崩壞（崩塌）</strong>：受重力影響快速向下滑落</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-amber-300 mb-2">📝 考前必背快速記憶口訣</div>
+        <ul class="text-sm text-slate-200 space-y-1.5">
+          <li>✨ <strong>內營力長痘痘，外營力擠痘痘。</strong></li>
+          <li>✨ <strong>盆地中間低，臺地頂部平。</strong></li>
+          <li>✨ <strong>高度分界線</strong>：山地相對高度 <strong>≥ 1000 m</strong>；丘陵與臺地 <strong>&lt; 1000 m</strong>。</li>
+          <li>✨ <strong>東岸平直少灣澳，西岸沙洲養蚵蝦。</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 彈窗 2：隨堂小測驗 ==================== -->
+  <div id="quizModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative">
+      <button onclick="closeModal('quizModal')" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+      <div class="flex items-center gap-2 text-fuchsia-400 text-xs font-bold uppercase tracking-wider">
+        <span>🎯 國一地理隨堂挑戰</span>
+        <span id="quizProgress">第 1 / 6 題</span>
+      </div>
+      <h3 id="quizQuestion" class="text-lg font-bold text-white mt-2 leading-snug">
+        題目載入中...
+      </h3>
+
+      <div id="quizOptions" class="mt-4 space-y-2.5">
+        <!-- 選項按鈕 -->
+      </div>
+
+      <div id="quizFeedback" class="mt-4 p-3 rounded-xl text-sm hidden"></div>
+
+      <div class="mt-5 flex justify-end gap-2">
+        <button id="btnNextQuiz" onclick="nextQuiz()" class="hidden px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition">
+          下一題 →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== 完整國一地理資料庫 ====================
+    const GEO_DATA = {
+      // --- 山地 (5大山脈) ---
+      mt_xueshan: {
+        category: 'mountain',
+        badge: '🟣 五大山脈｜山地 (一)',
+        badgeClass: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40',
+        heightTag: '相對高度 ≥ 1000 m',
+        emoji: '⛰️',
+        title: '一、雪山山脈',
+        subtitle: '呈東北—西南走向，國道五號雪山隧道貫穿其中。',
+        points: [
+          '<strong>位置與走向</strong>：位於臺灣北部至中部偏西，呈<strong>東北—西南走向</strong>。',
+          '<strong>交通建設</strong>：<strong>國道五號（蔣渭水高速公路）</strong>以雪山隧道貫穿山脈，連接臺北盆地與蘭陽平原。',
+          '<strong>地形特徵</strong>：山地相對高度在 1000 公尺以上，地勢高聳崎嶇。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '高聳尖銳山峰',
+        contourLabel: '密集閉合曲線',
+        contourExplain: '山地等高線呈閉合曲線，越往內圈海拔高度越高；等高線間距非常密集，代表坡度陡峭。',
+        svgIds: ['feat-mt-xueshan']
+      },
+      mt_central: {
+        category: 'mountain',
+        badge: '🟣 五大山脈｜山地 (二)',
+        badgeClass: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40',
+        heightTag: '相對高度 ≥ 1000 m',
+        emoji: '🏔️',
+        title: '二、中央山脈',
+        subtitle: '臺灣最長、貫穿全島的「臺灣屋脊」，東西水系的分水嶺。',
+        points: [
+          '<strong>起訖範圍</strong>：北起宜蘭<strong>蘇澳</strong>，南到屏東<strong>恆春鵝鑾鼻</strong>，縱貫臺灣本島。',
+          '<strong>地理意義</strong>：分隔臺灣東部與西部河川，成為東西交通的天然屏障。',
+          '<strong>成因</strong>：歐亞板塊與菲律賓海板塊劇烈擠壓隆起（內營力造山運動）。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '高聳尖銳山峰',
+        contourLabel: '密集閉合曲線',
+        contourExplain: '山脊線上的等高線會呈現「V」字形彎曲，且 V 字的尖端指向海拔較低處（即向山腳突出）。',
+        svgIds: ['feat-mt-central']
+      },
+      mt_coastal: {
+        category: 'mountain',
+        badge: '🟣 五大山脈｜山地 (三)',
+        badgeClass: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40',
+        heightTag: '相對高度 ≥ 1000 m',
+        emoji: '⛰️',
+        title: '三、海岸山脈',
+        subtitle: '位於花東縱谷東側，五大山脈中地質年代較年輕。',
+        points: [
+          '<strong>位置</strong>：緊鄰太平洋，西側為花東縱谷平原，北起花蓮溪口、南至臺東卑南溪口。',
+          '<strong>地質特色</strong>：五大山脈中<strong>地質年代較年輕</strong>（屬於菲律賓海板塊的呂宋島弧擠壓貼合而成）。',
+          '<strong>周邊地形</strong>：南段內側包圍著<strong>泰源盆地</strong>，東側則是平直的東部斷層海岸。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '東側臨海陡降',
+        contourLabel: '密集閉合曲線',
+        contourExplain: '海岸山脈東側緊鄰太平洋，等高線在臨海一側極度密集，顯示海階與斷層崖陡峭。',
+        svgIds: ['feat-mt-coastal']
+      },
+      mt_yushan: {
+        category: 'mountain',
+        badge: '🟣 五大山脈｜山地 (四)',
+        badgeClass: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40',
+        heightTag: '主峰 3952 m (東亞最高)',
+        emoji: '🗻',
+        title: '四、玉山山脈',
+        subtitle: '位於中央山脈西側中段，擁有清代八通關古道與布農族文化。',
+        points: [
+          '<strong>人文與族群</strong>：主要為原住民族<strong>布農族</strong>的傳統領域。',
+          '<strong>歷史古道</strong>：清領時期開闢的<strong>八通關古道</strong>橫越此區，連接西部竹山與東部玉里。',
+          '<strong>高度之最</strong>：玉山主峰海拔 3,952 公尺，為臺灣及東亞最高峰。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '主峰高聳突兀',
+        contourLabel: '多圈密集閉合',
+        contourExplain: '玉山主峰等高線圈數最多，內圈海拔數值最高，陡崖處多條等高線甚至會重疊在一起。',
+        svgIds: ['feat-mt-yushan']
+      },
+      mt_alishan: {
+        category: 'mountain',
+        badge: '🟣 五大山脈｜山地 (五)',
+        badgeClass: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40',
+        heightTag: '相對高度 ≥ 1000 m',
+        emoji: '🌲',
+        title: '五、阿里山山脈',
+        subtitle: '位於玉山山脈西側，地質年代較古老，為鄒族世居之地。',
+        points: [
+          '<strong>地質對比</strong>：五大山脈中<strong>地質年代較古老</strong>（與地質年輕的海岸山脈形成考試常見對比！）。',
+          '<strong>人文與族群</strong>：原住民族<strong>鄒族</strong>主要分布於阿里山山脈一帶（如達邦、特富野社）。',
+          '<strong>位置</strong>：介於玉山山脈與嘉南平原之間，以森林鐵路、雲海聞名。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '層巒疊嶂',
+        contourLabel: '密集閉合曲線',
+        contourExplain: '越往中心海拔數值越大；河谷切割處等高線則會呈現 V 字尖端指向高處。',
+        svgIds: ['feat-mt-alishan']
+      },
+
+      // --- 丘陵 (3縣市) ---
+      hill_taozhumiao: {
+        category: 'hill',
+        badge: '🟠 三縣市丘陵｜丘陵',
+        badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
+        heightTag: '相對高度 < 1000 m',
+        emoji: '🌄',
+        title: '桃園、新竹、苗栗丘陵',
+        subtitle: '起伏和緩的低矮山地，客家人開闢梯田種植茶樹與果樹。',
+        points: [
+          '<strong>三大代表縣市</strong>：1. <strong>桃園市</strong>、2. <strong>新竹縣</strong>、3. <strong>苗栗縣</strong>（竹苗丘陵最為典型）。',
+          '<strong>產業與人文</strong>：<strong>客家人</strong>順應坡地開闢<strong>梯田</strong>，並重視<strong>水土保持</strong>，主要種植<strong>果樹、茶樹</strong>（如東方美人茶、柑橘、草莓）。',
+          '<strong>高度定義</strong>：相對高度 <strong>&lt; 1000 公尺</strong>，地勢起伏較山地和緩。'
+        ],
+        profileType: 'hill',
+        profileLabel: '起伏和緩波浪狀',
+        contourLabel: '疏密適中閉合曲線',
+        contourExplain: '丘陵等高線同樣呈閉合圓圈，但圈數比山地少、線條間距較寬（疏密適中），顯示坡度較緩。',
+        svgIds: ['feat-hill-taozhumiao']
+      },
+
+      // --- 臺地 (6大臺地) ---
+      tab_linkou: {
+        category: 'tableland',
+        badge: '🟡 六大臺地｜臺地 (1)',
+        badgeClass: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40',
+        heightTag: '相對高度 < 1000 m｜頂平邊陡',
+        emoji: '🟫',
+        title: '1. 林口臺地',
+        subtitle: '位於臺北盆地西側，典型「頂部平坦、周邊陡峭」的臺地。',
+        points: [
+          '<strong>地形口訣</strong>：「<strong>盆地中間低，臺地頂部平</strong>」，相對高度小於 1000 公尺。',
+          '<strong>成因</strong>：古石門溪沖積扇受地殼抬升而形成（紅土礫石層）。',
+          '<strong>六大臺地全覽</strong>：1.林口、2.桃園、3.大肚、4.八卦、5.恆春半島、6.澎湖。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '頂部平坦、邊緣陡峭',
+        contourLabel: '外圍極密、中間大片空白',
+        contourExplain: '臺地等高線最具辨識度！四周邊緣坡度陡峭所以等高線「極為密集」，但中央頂部平坦所以出現「大片稀疏空白」。',
+        svgIds: ['feat-tab-linkou']
+      },
+      tab_taoyuan: {
+        category: 'tableland',
+        badge: '🟡 六大臺地｜臺地 (2)',
+        badgeClass: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40',
+        heightTag: '相對高度 < 1000 m｜頂平邊陡',
+        emoji: '💧',
+        title: '2. 桃園臺地',
+        subtitle: '臺地面平坦但河川短促，先民開鑿大量「埤塘」用於灌溉。',
+        points: [
+          '<strong>水利特色</strong>：因臺地地勢較高、河川源短流急蓄水不易，先民開挖數千座<strong>埤塘</strong>（千塘之鄉），主要用來<strong>灌溉</strong>農田。',
+          '<strong>地形特徵</strong>：頂部平坦開闊、邊緣陡峭，相對高度 &lt; 1000 公尺。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '頂平邊陡 (階梯狀)',
+        contourLabel: '外圍極密、中間稀疏',
+        contourExplain: '等高線在外圍陡坡處密集排列，進入頂部臺地面後等高線突然變得極稀疏。',
+        svgIds: ['feat-tab-taoyuan']
+      },
+      tab_dadu: {
+        category: 'tableland',
+        badge: '🟡 六大臺地｜臺地 (3)',
+        badgeClass: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40',
+        heightTag: '相對高度 < 1000 m',
+        emoji: '🟫',
+        title: '3. 大肚臺地',
+        subtitle: '位於臺中盆地西側、大甲溪與大肚溪之間。',
+        points: [
+          '<strong>位置</strong>：呈南北狹長分布，西側為清水海岸平原，東側緊鄰<strong>臺中盆地</strong>。',
+          '<strong>地形特徵</strong>：頂部平坦、周邊陡峭，相對高度小於 1000 公尺。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '頂部平坦、邊緣陡峭',
+        contourLabel: '外圍極密、中間稀疏',
+        contourExplain: '外圍坡坎等高線密集，頂部平台區域幾乎沒有等高線通過。',
+        svgIds: ['feat-tab-dadu']
+      },
+      tab_bagua: {
+        category: 'tableland',
+        badge: '🟡 六大臺地｜臺地 (4)',
+        badgeClass: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40',
+        heightTag: '相對高度 < 1000 m',
+        emoji: '🟫',
+        title: '4. 八卦臺地',
+        subtitle: '位於大肚溪以南、濁水溪以北，彰化平原東側。',
+        points: [
+          '<strong>位置</strong>：與大肚臺地南北相望（隔大肚溪），西側為<strong>彰化平原</strong>，東側為臺中盆地南端。',
+          '<strong>地形特徵</strong>：頂平邊陡，紅土礫石層發達，盛產鳳梨、茶葉。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '頂部平坦、邊緣陡峭',
+        contourLabel: '外圍極密、中間稀疏',
+        contourExplain: '外圍密集、內部寬廣空白，是判讀臺地等高線的黃金法則。',
+        svgIds: ['feat-tab-bagua']
+      },
+      tab_hengchun: {
+        category: 'tableland',
+        badge: '🟡 六大臺地｜臺地 (5)',
+        badgeClass: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40',
+        heightTag: '半島地形｜臺地為主',
+        emoji: '🌴',
+        title: '5. 恆春半島',
+        subtitle: '三面環海、一面連接陸地的「半島」，地形上歸類為臺地。',
+        points: [
+          '<strong>半島定義</strong>：<strong>三面環海，一面連接陸地</strong>（注意與四面環海的「島嶼」區分！）。',
+          '<strong>地形歸類</strong>：補習班老師特別將恆春半島與澎湖一同圈起，歸入六大<strong>臺地</strong>之一（如恆春西臺地）。',
+          '<strong>海岸類型</strong>：南端為<strong>珊瑚礁海岸（岩岸）</strong>。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '頂平邊陡臨海',
+        contourLabel: '外圍密集、頂部平坦',
+        contourExplain: '臺地面平坦稀疏，四周臨海邊緣等高線密集。',
+        svgIds: ['feat-tab-hengchun']
+      },
+
+      // --- 盆地 (4大盆地) ---
+      basin_taipei: {
+        category: 'basin',
+        badge: '🔵 四大盆地｜盆地 (1)',
+        badgeClass: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40',
+        heightTag: '中間低、四周高',
+        emoji: '🏙️',
+        title: '1. 臺北盆地',
+        subtitle: '位於臺灣北部，四周被大屯火山群、雪山山脈與林口臺地包圍。',
+        points: [
+          '<strong>地形特徵</strong>：<strong>中間低、四周高</strong>，盆底由淡水河系沖積而成，地勢平坦、人口密集。',
+          '<strong>四大盆地全覽</strong>：1. <strong>臺北盆地</strong>（北部）、2. <strong>臺中盆地</strong>（中部）、3. <strong>埔里盆地</strong>（南投縣）、4. <strong>泰源盆地</strong>（臺東）。'
+        ],
+        profileType: 'basin',
+        profileLabel: '中間低平、四周高起',
+        contourLabel: '外密內疏＋示坡線向內',
+        contourExplain: '盆地等高線四周密集（高）、中間稀疏空白（低）；為了與臺地區分，盆地內圈常畫有指向內側低處的「示坡線」（小短線）。',
+        svgIds: ['feat-basin-taipei']
+      },
+      basin_taichung: {
+        category: 'basin',
+        badge: '🔵 四大盆地｜盆地 (2)',
+        badgeClass: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40',
+        heightTag: '中間低、四周高',
+        emoji: '🏙️',
+        title: '2. 臺中盆地',
+        subtitle: '位於臺灣中部，西有大肚與八卦臺地，東有豐原丘陵與雪山山脈。',
+        points: [
+          '<strong>地形特徵</strong>：中間低平、四周高起，由大甲溪、大肚溪沖積而成。',
+          '<strong>位置關係</strong>：大肚臺地與八卦臺地正好構成臺中盆地的西側邊緣。'
+        ],
+        profileType: 'basin',
+        profileLabel: '碗狀凹陷地形',
+        contourLabel: '外高內低、示坡線指向中心',
+        contourExplain: '越往中心海拔數值越小，中央盆底平坦故等高線稀疏。',
+        svgIds: ['feat-basin-taichung']
+      },
+      basin_puli: {
+        category: 'basin',
+        badge: '🔵 四大盆地｜盆地 (3)',
+        badgeClass: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40',
+        heightTag: '中間低、四周高',
+        emoji: '🏞️',
+        title: '3. 埔里盆地',
+        subtitle: '位於南投縣群山之中，臺灣地理中心碑所在地。',
+        points: [
+          '<strong>位置</strong>：<strong>南投縣</strong>，四周被中央山脈與雪山山脈支脈環繞，是典型的山間盆地。',
+          '<strong>產業特色</strong>：水質甘甜、氣候溫和，以筊白筍、紹興酒、紙業聞名。'
+        ],
+        profileType: 'basin',
+        profileLabel: '群山環繞的盆底',
+        contourLabel: '四周密集高聳、中央低平',
+        contourExplain: '四周山坡等高線密集且數值高，盆底中央稀疏且數值低。',
+        svgIds: ['feat-basin-puli']
+      },
+      basin_taiyuan: {
+        category: 'basin',
+        badge: '🔵 四大盆地｜盆地 (4)',
+        badgeClass: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40',
+        heightTag: '中間低、四周高',
+        emoji: '🌿',
+        title: '4. 泰源盆地',
+        subtitle: '位於臺東縣東河鄉，隱藏在海岸山脈南段內部的山間盆地。',
+        points: [
+          '<strong>位置</strong>：<strong>臺東縣</strong>（常考四大盆地中唯一位於東部的盆地！）。',
+          '<strong>水文特色</strong>：馬武窟溪切穿海岸山脈流入太平洋，形成「登仙峽」峽谷景觀。'
+        ],
+        profileType: 'basin',
+        profileLabel: '中間低、四周高',
+        contourLabel: '外密內疏、數值內減',
+        contourExplain: '越往盆地中心海拔數值越低，與山地（數值內增）剛好相反。',
+        svgIds: ['feat-basin-taiyuan']
+      },
+
+      // --- 平原 (6大平原 + 河流堆積) ---
+      plain_lanyang: {
+        category: 'plain',
+        badge: '🟢 六大平原｜平原 (1)',
+        badgeClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+        heightTag: '地勢低平｜沖積平原',
+        emoji: '🌾',
+        title: '1. 蘭陽平原',
+        subtitle: '位於宜蘭縣，由蘭陽溪沖積而成的三角形平原。',
+        points: [
+          '<strong>位置與成因</strong>：位於<strong>宜蘭縣</strong>，北有雪山山脈、南有中央山脈、東臨太平洋，形狀呈三角形。',
+          '<strong>六大平原全覽</strong>：1.蘭陽、2.花東縱谷、3.屏東、4.嘉南、5.雲林、6.彰化。'
+        ],
+        profileType: 'plain',
+        profileLabel: '極度平坦低緩',
+        contourLabel: '極為稀疏 (幾乎無線)',
+        contourExplain: '平原地勢平坦、海拔低，等高線間距非常寬廣、線條極為稀疏。',
+        svgIds: ['feat-plain-lanyang']
+      },
+      plain_huadong: {
+        category: 'plain',
+        badge: '🟢 六大平原｜平原 (2)',
+        badgeClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+        heightTag: '狹長谷地｜板塊縫合帶',
+        emoji: '🌾',
+        title: '2. 花東縱谷平原',
+        subtitle: '夾在中央山脈與海岸山脈之間的狹長平原，兩大板塊交界處。',
+        points: [
+          '<strong>位置</strong>：位於花蓮與臺東之間，西為<strong>中央山脈</strong>、東為<strong>海岸山脈</strong>。',
+          '<strong>水系與堆積</strong>：由花蓮溪、秀姑巒溪、卑南溪沖積而成，山麓地帶發育許多<strong>沖積扇</strong>。'
+        ],
+        profileType: 'plain',
+        profileLabel: '兩山夾一谷',
+        contourLabel: '谷地內部稀疏、兩側密集',
+        contourExplain: '縱谷中央平原區等高線極稀疏，但東西兩側山脈等高線立刻變得極為密集。',
+        svgIds: ['feat-plain-huadong']
+      },
+      plain_pingtung: {
+        category: 'plain',
+        badge: '🟢 六大平原｜平原 (3)',
+        badgeClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+        heightTag: '地勢低平｜熱帶農業',
+        emoji: '🥭',
+        title: '3. 屏東平原',
+        subtitle: '位於臺灣南部，由高屏溪、東港溪等河川沖積而成。',
+        points: [
+          '<strong>成因</strong>：高屏溪（臺灣流域面積最大河川）等河川攜帶泥沙堆積而成。',
+          '<strong>氣候與農業</strong>：屬熱帶季風氣候，盛產蓮霧、芒果、香蕉等熱帶水果。'
+        ],
+        profileType: 'plain',
+        profileLabel: '平坦開闊',
+        contourLabel: '等高線極稀疏',
+        contourExplain: '地表起伏極小，等高線之間距離極寬，幾乎看不到閉合小圈。',
+        svgIds: ['feat-plain-pingtung']
+      },
+      plain_chianan: {
+        category: 'plain',
+        badge: '🟢 六大平原｜平原 (4)',
+        badgeClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+        heightTag: '臺灣面積最大平原',
+        emoji: '🌾',
+        title: '4. 嘉南平原',
+        subtitle: '臺灣面積最大的平原，平埔族群「西拉雅族」的傳統居住地。',
+        points: [
+          '<strong>規模之最</strong>：臺灣<strong>面積最大</strong>的平原（涵蓋嘉義、臺南至高雄北部）。',
+          '<strong>歷史族群</strong>：平埔族群中人口最多的<strong>西拉雅族</strong>主要分布於嘉南平原一帶。',
+          '<strong>農業</strong>：嘉南大圳興建後成為臺灣最重要的稻米與甘蔗產區。'
+        ],
+        profileType: 'plain',
+        profileLabel: '廣闊低平',
+        contourLabel: '等高線極稀疏',
+        contourExplain: '大片區域海拔皆在 100 公尺以下，等高線極稀疏且平直。',
+        svgIds: ['feat-plain-chianan']
+      },
+      plain_yunlin: {
+        category: 'plain',
+        badge: '🟢 六大平原｜平原 (5)',
+        badgeClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+        heightTag: '濁水溪沖積扇平原',
+        emoji: '🥬',
+        title: '5. 雲林平原',
+        subtitle: '位於濁水溪以南，專門生產「蔬果」的農業重鎮。',
+        points: [
+          '<strong>農業特色</strong>：老師筆記重點——雲林平原專門生產<strong>蔬果</strong>（如西螺蔬菜、古坑柳丁、雲林蒜頭）。',
+          '<strong>水文</strong>：受濁水溪灌溉之利，土壤肥沃。'
+        ],
+        profileType: 'plain',
+        profileLabel: '平坦沖積平原',
+        contourLabel: '等高線極稀疏',
+        contourExplain: '等高線極為稀疏，反映平坦的沖積平原地形。',
+        svgIds: ['feat-plain-yunlin']
+      },
+      plain_changhua: {
+        category: 'plain',
+        badge: '🟢 六大平原｜平原 (6)',
+        badgeClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+        heightTag: '濁水溪沖積扇平原',
+        emoji: '🌸',
+        title: '6. 彰化平原',
+        subtitle: '位於濁水溪以北、八卦臺地西側，專門生產「花卉」。',
+        points: [
+          '<strong>農業特色</strong>：老師筆記重點——彰化平原專門生產<strong>花卉</strong>（如田尾公路花園、永靖苗木，全臺最大花卉產地）。',
+          '<strong>對比記憶</strong>：<strong>彰化種花卉、雲林種蔬果</strong>！'
+        ],
+        profileType: 'plain',
+        profileLabel: '平坦沖積平原',
+        contourLabel: '等高線極稀疏',
+        contourExplain: '平原區等高線極稀疏，東側接八卦臺地時等高線才突然變密。',
+        svgIds: ['feat-plain-changhua']
+      },
+      river_deposit: {
+        category: 'plain',
+        badge: '🏞️ 外營力｜河流堆積地形',
+        badgeClass: 'bg-emerald-400/20 text-emerald-300 border-emerald-400/40',
+        heightTag: '出谷口 vs 出海口',
+        emoji: '🌊',
+        title: '河流堆積：沖積扇 vs 三角洲',
+        subtitle: '河水搬運泥沙，在「出谷口」與「出海口」形成兩種扇形堆積。',
+        points: [
+          '<strong>▲ 沖積扇（上游／中游出谷口）</strong>：河流從陡峭山地流出山谷口時，坡度驟減、流速變慢，泥沙堆積成扇形（如花東縱谷山腳、濁水溪沖積扇）。',
+          '<strong>▲ 三角洲（下游出海口）</strong>：河流流入海洋的<strong>出海口</strong>處，受海水頂托流速減慢，泥沙堆積形成三角洲（如蘭陽溪口、淡水河口）。',
+          '<strong>判讀口訣</strong>：出<strong>谷</strong>口 → <strong>沖積扇</strong>；出<strong>海</strong>口 → <strong>三角洲</strong>。'
+        ],
+        profileType: 'fan',
+        profileLabel: '出谷口扇狀緩斜',
+        contourLabel: '同心圓弧向低處凸出',
+        contourExplain: '沖積扇的等高線在出谷口處呈扇形同心圓弧狀，向低處平緩展開，越往扇端等高線越稀疏。',
+        svgIds: ['feat-plain-lanyang', 'feat-plain-huadong']
+      },
+
+      // --- 離島與地質 ---
+      isl_kinmen: {
+        category: 'island',
+        badge: '🏝️ 離島地質｜大陸島 (1)',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        heightTag: '大陸島｜花崗岩',
+        emoji: '🦁',
+        title: '金門列島（大陸島）',
+        subtitle: '原本與中國大陸相連，因海平面上升或陸地下沉而與大陸分離。',
+        points: [
+          '<strong>大陸島成因</strong>：四面環海，原本是大陸的一部分，因<strong>陸地下沉或海平面上升</strong>而分離。',
+          '<strong>地質岩石</strong>：以堅硬的<strong>花崗岩</strong>為主（早期國軍在花崗岩山體內開鑿坑道）。',
+          '<strong>人文景觀</strong>：<strong>戰地文化</strong>（翟山坑道、擎天廳）、<strong>風獅爺</strong>（鎮風止煞）、傳統<strong>閩式建築</strong>（燕尾、馬背）。'
+        ],
+        profileType: 'hill',
+        profileLabel: '花崗岩低緩丘陵',
+        contourLabel: '稀疏低矮閉合圈',
+        contourExplain: '金門地勢平緩，最高峰太武山僅 253 公尺，等高線呈稀疏低矮閉合圈。',
+        svgIds: ['feat-isl-kinmen']
+      },
+      isl_matsu: {
+        category: 'island',
+        badge: '🏝️ 離島地質｜大陸島 (2)',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        heightTag: '大陸島｜連江縣',
+        emoji: '🏝️',
+        title: '馬祖列島（大陸島）',
+        subtitle: '行政區屬連江縣，位於臺北市西北方、閩江口外。',
+        points: [
+          '<strong>位置與行政區</strong>：屬<strong>連江縣</strong>，位置在<strong>臺北市的西北方</strong>（老師筆記重點！）。',
+          '<strong>地理極點與景點</strong>：最北為<strong>北竿島</strong>（筆記標註；實際行政轄區極北為東引），著名景點有<strong>八八坑道</strong>、芹壁聚落、藍眼淚。',
+          '<strong>成因與地質</strong>：與金門同屬<strong>大陸島</strong>，由花崗岩構成，海岸多灣澳。'
+        ],
+        profileType: 'hill',
+        profileLabel: '花崗岩島丘',
+        contourLabel: '海岸曲折、低丘閉合',
+        contourExplain: '島嶼四周海岸線曲折，等高線緊貼海岸呈現不規則閉合曲線。',
+        svgIds: ['feat-isl-matsu']
+      },
+      isl_penghu: {
+        category: 'island',
+        badge: '🌋 離島地質｜火山島 ① & 臺地 6',
+        badgeClass: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40',
+        heightTag: '火山島｜玄武岩方山臺地',
+        emoji: '🌋',
+        title: '① 澎湖群島（火山島／臺地）',
+        subtitle: '海底火山噴發形成玄武岩熔岩流，冷卻後呈現「平臺狀」方山地形。',
+        points: [
+          '<strong>雙重身份</strong>：既是五大<strong>火山島</strong>之一（編號 ①），也是六大<strong>臺地</strong>之一（編號 6）與三大火山群之一！',
+          '<strong>地質岩石</strong>：<strong>玄武岩</strong>（柱狀玄武岩節理），地勢平坦稱「<strong>平臺狀</strong>」地形（方山）。',
+          '<strong>觀光特色</strong>：<strong>仙人掌冰、黑糖糕、雙心石滬（七美）、澎湖花火節</strong>。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '玄武岩平臺狀 (方山)',
+        contourLabel: '外圍密集、頂部極平坦',
+        contourExplain: '海崖邊緣等高線密集，島嶼頂部幾乎完全平坦（方山臺地特徵）。',
+        svgIds: ['feat-isl-penghu']
+      },
+      isl_diaoyutai: {
+        category: 'island',
+        badge: '🌋 離島地質｜火山島 ②',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        heightTag: '火山島｜臺灣東北方',
+        emoji: '🌋',
+        title: '② 釣魚臺列嶼（火山島）',
+        subtitle: '位於臺灣東北方遠海的無人火山島嶼（行政上隸屬宜蘭縣頭城鎮）。',
+        points: [
+          '<strong>精準位置</strong>：位於<strong>臺灣東北方</strong>海域（基隆東北方約 170 公里處，已修正至地圖右上方正確方位）。',
+          '<strong>火山島路線</strong>：老師板書編號 ①澎湖 → ②<strong>釣魚臺列嶼</strong> → ③龜山島 → ④綠島 → ⑤蘭嶼。',
+          '<strong>成因</strong>：海底火山噴發堆積露出海面而形成。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '海底火山噴發島嶼',
+        contourLabel: '同心圓向中心遞增',
+        contourExplain: '火山島由海底火山錐露出海面形成，等高線呈圓形或橢圓形閉合圈向山頂遞增。',
+        svgIds: ['feat-isl-diaoyutai']
+      },
+      isl_guishan: {
+        category: 'island',
+        badge: '🌋 離島地質｜火山島 ③',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        heightTag: '火山島｜宜蘭縣外海',
+        emoji: '🐢',
+        title: '③ 龜山島（火山島）',
+        subtitle: '位於宜蘭縣頭城鎮外海約 10 公里處，外型神似浮龜的活火山島。',
+        points: [
+          '<strong>精準位置</strong>：位於<strong>宜蘭縣</strong>外海（蘭陽平原東方海域，已修正至宜蘭外海正確位置！）。',
+          '<strong>地質特色</strong>：由安山岩質火山碎屑與熔岩構成，島上有硫氣孔與海底熱泉，是臺灣目前唯一確定的<strong>活火山</strong>。',
+          '<strong>觀光</strong>：以「龜山朝日」、賞鯨豚與牛奶海聞名。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '龜甲與龜首火山錐',
+        contourLabel: '雙峰狀閉合等高線',
+        contourExplain: '東側龜首與中央龜甲各有閉合等高線高峰，中間龜頸處較低平。',
+        svgIds: ['feat-isl-guishan']
+      },
+      isl_green: {
+        category: 'island',
+        badge: '🌋 離島地質｜火山島 ④',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        heightTag: '火山島｜海底溫泉',
+        emoji: '♨️',
+        title: '④ 綠島（火山島）',
+        subtitle: '位於臺東外海的火山島，擁有世界級的「朝日海底溫泉」。',
+        points: [
+          '<strong>代表特色</strong>：擁有稀有的<strong>海底溫泉</strong>（朝日溫泉，海水滲入地底受火山地熱加溫湧出）。',
+          '<strong>地質成因</strong>：菲律賓海板塊上的海底火山噴發形成（安山岩與集塊岩），周邊亦有裙礁分布。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '火山丘陵島',
+        contourLabel: '閉合曲線向內遞增',
+        contourExplain: '島嶼中央為火山丘陵，等高線呈閉合曲線向島中央遞增。',
+        svgIds: ['feat-isl-green']
+      },
+      isl_orchid: {
+        category: 'island',
+        badge: '🌋 離島地質｜火山島 ⑤',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        heightTag: '火山島｜達悟族',
+        emoji: '🛶',
+        title: '⑤ 蘭嶼（火山島）',
+        subtitle: '位於臺東東南方外海，原住民族「達悟族」的家鄉。',
+        points: [
+          '<strong>人文與族群</strong>：原住民族<strong>達悟族</strong>（舊稱雅美族）世居於此，發展出飛魚季、拼板舟與地下屋文化。',
+          '<strong>地質成因</strong>：火山島路線第 ⑤ 站，由海底火山噴發堆積而成。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '火山島嶼地勢',
+        contourLabel: '中央高聳閉合曲線',
+        contourExplain: '島嶼中央紅頭山海拔 552 公尺，等高線自海岸向內迅速密集升高。',
+        svgIds: ['feat-isl-orchid']
+      },
+      isl_liuqiu: {
+        category: 'island',
+        badge: '🪸 離島地質｜珊瑚礁島 (1)',
+        badgeClass: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40',
+        heightTag: '珊瑚礁島｜屏東外海',
+        emoji: '🐢',
+        title: '1. 琉球嶼／小琉球（珊瑚礁島）',
+        subtitle: '位於屏東西南方外海，臺灣離島中唯一完全由珊瑚礁構成的島嶼。',
+        points: [
+          '<strong>珊瑚礁島成因</strong>：熱帶清澈淺海中的珊瑚蟲骨骼堆積，再經地殼抬升露出海面形成（石灰岩地質）。',
+          '<strong>四大珊瑚礁島全覽</strong>：1. <strong>琉球嶼（小琉球）</strong>、2. <strong>東沙島</strong>、3. <strong>太平島</strong>、4. <strong>澎湖南方四島</strong>（113年會考/課程重點）。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '低平珊瑚礁石灰岩臺地',
+        contourLabel: '低矮稀疏閉合圈',
+        contourExplain: '全島最高僅 87 公尺，頂部呈傾斜珊瑚礁臺地，等高線稀疏。',
+        svgIds: ['feat-isl-liuqiu']
+      },
+      isl_south4: {
+        category: 'island',
+        badge: '🪸 離島地質｜珊瑚礁島 (4)',
+        badgeClass: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40',
+        heightTag: '珊瑚礁島｜澎湖南方',
+        emoji: '🪸',
+        title: '4. 澎湖南方四島（珊瑚礁島）',
+        subtitle: '位於澎湖群島南方（東吉嶼、西吉嶼、東嶼坪、西嶼坪），〈113年〉課程重點。',
+        points: [
+          '<strong>位置</strong>：位於澎湖本島南方海域（已標示於澎湖正南方正確位置！）。',
+          '<strong>特色</strong>：擁有壯觀的玄武岩地質與健康茂密的珊瑚礁生態系，為海洋國家公園。'
+        ],
+        profileType: 'tableland',
+        profileLabel: '低平海蝕平臺與珊瑚礁',
+        contourLabel: '低矮閉合等高線',
+        contourExplain: '島嶼面積小且地勢低平，等高線圈數少且間距寬。',
+        svgIds: ['feat-isl-south4']
+      },
+      isl_southsea: {
+        category: 'island',
+        badge: '🪸 離島地質｜珊瑚礁島 (2 & 3)',
+        badgeClass: 'bg-cyan-400/20 text-cyan-300 border-cyan-400/40',
+        heightTag: '珊瑚礁島｜南海諸島',
+        emoji: '🧭',
+        title: '2. 東沙島 & 3. 太平島（南海珊瑚礁島）',
+        subtitle: '位於臺灣西南方遠處的南海海域，因此地圖上皆以「右下角附圖框」呈現！',
+        points: [
+          '<strong>為何在附圖框？</strong>：東沙島（高雄西南方約 440 公里）與太平島（南沙群島，高雄西南方約 1,600 公里，我國領土最南端）距離本島遙遠，因此地理課本與地圖一定放在<strong>附圖框</strong>中，不會畫在太平洋或釣魚臺旁邊！',
+          '<strong>地質成因</strong>：兩者皆為熱帶海域的<strong>珊瑚礁島</strong>（東沙為環礁地形，太平島是南沙群島最大自然島）。'
+        ],
+        profileType: 'plain',
+        profileLabel: '低平珊瑚礁沙洲',
+        contourLabel: '海拔極低 (幾乎無線)',
+        contourExplain: '珊瑚礁環礁島嶼海拔通常僅 3～5 公尺，在一般等高線圖上幾乎沒有等高線。',
+        svgIds: ['feat-isl-southsea']
+      },
+      volcano_groups: {
+        category: 'island',
+        badge: '🌋 補充卡片｜三大火山群',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        heightTag: '火成岩與火山地形',
+        emoji: '🌋',
+        title: '臺灣三大火山群',
+        subtitle: '老師筆記卡片 3：澎湖、基隆、大屯火山群。',
+        points: [
+          '<strong>1. 澎湖火山群</strong>：岩石為<strong>玄武岩</strong>，熔岩流動性高，冷卻後形成<strong>平臺狀</strong>地形（方山）。',
+          '<strong>2. 基隆火山群</strong>：位於新北市瑞芳、九份、金瓜石一帶，富含金銅礦產。',
+          '<strong>3. 大屯火山群</strong>：位於臺北盆地北側（<strong>陽明山</strong>國家公園），岩石為<strong>安山岩</strong>，具火山口、硫氣孔與溫泉景觀。'
+        ],
+        profileType: 'mountain',
+        profileLabel: '大屯安山岩錐 vs 澎湖玄武岩臺',
+        contourLabel: '火山口向內凹陷',
+        contourExplain: '大屯火山群的火山口（如七星山、小油坑）在山頂處會出現「示坡線向內」的小凹陷圈。',
+        svgIds: ['feat-isl-penghu', 'feat-basin-taipei']
+      },
+
+      // --- 四種海岸類型 ---
+      coast_north: {
+        category: 'coast',
+        badge: '🌊 四種海岸｜① 北部海岸',
+        badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+        heightTag: '山地灣澳海岸 (岩岸)',
+        emoji: '⚓',
+        title: '① 北部：山地灣澳海岸（岩岸）',
+        subtitle: '山脈逼近海岸，海水淹沒谷地形成岬角與海灣相間的「谷灣式海岸」。',
+        points: [
+          '<strong>海岸性質</strong>：屬於<strong>岩岸</strong>，海岸線曲折、水深港闊。',
+          '<strong>天然良港</strong>：港灣多，利於發展航運與漁業，代表港口有<strong>基隆港、蘇澳港</strong>。',
+          '<strong>岬角與海灣</strong>：突出的陸地為「岬角」（如野柳、富貴角），凹入的海洋為「海灣」。'
+        ],
+        profileType: 'coast_rocky',
+        profileLabel: '岩岸水深曲折',
+        contourLabel: '海岸線曲折、岬角向外凸',
+        contourExplain: '北部灣澳海岸的海岸線（0m 等高線）曲折多變，山脊延伸入海形成岬角，等高線緊貼海岸且密集。',
+        svgIds: ['feat-coast-north']
+      },
+      coast_east: {
+        category: 'coast',
+        badge: '🌊 四種海岸｜② 東部海岸',
+        badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
+        heightTag: '斷層海岸 (岩岸)',
+        emoji: '🪨',
+        title: '② 東部：斷層海岸（岩岸）',
+        subtitle: '受板塊擠壓斷層作用影響，海岸線平直、懸崖峭壁逼近太平洋。',
+        points: [
+          '<strong>海岸性質</strong>：屬於<strong>岩岸</strong>（如清水斷崖），海水極深。',
+          '<strong>港口建設</strong>：海岸線<strong>過於平直，缺乏天然灣澳</strong>！因此 1930 年代（日治時期）人工修建<strong>花蓮港</strong>。',
+          '<strong>口訣對照</strong>：「<strong>東岸平直少灣澳</strong>，西岸沙洲養蚵蝦」。'
+        ],
+        profileType: 'coast_fault',
+        profileLabel: '斷層峭壁直落深海',
+        contourLabel: '海岸線筆直、岸邊極密集',
+        contourExplain: '海岸線（0m）呈現一條幾乎筆直的線條，緊鄰海岸線的陸地等高線極為密集，顯示陡峭斷崖。',
+        svgIds: ['feat-coast-east']
+      },
+      coast_south: {
+        category: 'coast',
+        badge: '🌊 四種海岸｜③ 南部海岸',
+        badgeClass: 'bg-pink-500/20 text-pink-300 border-pink-500/40',
+        heightTag: '珊瑚礁海岸 (岩岸)',
+        emoji: '🪸',
+        title: '③ 南部（恆春半島）：珊瑚礁海岸（岩岸）',
+        subtitle: '熱帶溫暖清澈海域適合珊瑚生長，地殼抬升後形成裙礁與高位珊瑚礁。',
+        points: [
+          '<strong>海岸性質</strong>：屬於<strong>岩岸</strong>（珊瑚礁岩岸，如墾丁鵝鑾鼻、貓鼻頭）。',
+          '<strong>形成條件</strong>：水溫溫暖（20°C 以上）、陽光充足、水質清澈（無大河泥沙混濁）。'
+        ],
+        profileType: 'coast_rocky',
+        profileLabel: '珊瑚礁裙礁岩岸',
+        contourLabel: '鋸齒狀低矮岩岸',
+        contourExplain: '海岸線受海浪侵蝕珊瑚礁石灰岩，呈現細碎鋸齒狀與海蝕溝。',
+        svgIds: ['feat-coast-south']
+      },
+      coast_west: {
+        category: 'coast',
+        badge: '🌊 四種海岸｜④ 西部海岸',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        heightTag: '沙洲、潟湖海岸 (沙岸)',
+        emoji: '🦪',
+        title: '④ 西部：沙洲、潟湖海岸（沙岸）',
+        subtitle: '河川攜帶大量泥沙堆積，海岸線平直、水淺多沙洲與潟湖，盛行養殖漁業。',
+        points: [
+          '<strong>海岸性質</strong>：屬於<strong>沙岸</strong>，泥沙堆積形成離岸<strong>沙洲</strong>，沙洲與陸地之間圍成風浪平靜的<strong>潟湖</strong>（如七股潟湖）。',
+          '<strong>產業特色</strong>：海水較淺、水質平靜，適合發展<strong>養殖業</strong>：<strong>蚵仔（牡蠣）、蛤蜊（文蛤）、草蝦、虱目魚</strong>。',
+          '<strong>缺點</strong>：水淺易淤積，不利大型商港發展（需人工築堤開港，如臺中港）。'
+        ],
+        profileType: 'coast_sandy',
+        profileLabel: '沙洲與潟湖淺灘',
+        contourLabel: '平直海岸線＋離岸沙洲圈',
+        contourExplain: '陸地等高線極度稀疏平直，外海會出現平行於海岸的狹長沙洲小圈（海拔僅數公尺）。',
+        svgIds: ['feat-coast-west']
+      }
+    };
+
+    // ==================== 隨堂測驗題庫 ====================
+    const QUIZ_QUESTIONS = [
+      {
+        q: '1. 下列哪一組離島的成因與「金門、馬祖」相同，皆屬於原本與大陸相連的「大陸島」？',
+        options: ['A. 綠島、蘭嶼', 'B. 龜山島、釣魚臺列嶼', 'C. 金門花崗岩島嶼與連江縣馬祖列島', 'D. 琉球嶼（小琉球）、太平島'],
+        answer: 2,
+        explain: '金門與馬祖（連江縣）皆位於中國大陸東南沿海，因海平面上升或陸地下沉而分離，屬於「大陸島」，地質以花崗岩為主！'
+      },
+      {
+        q: '2. 關於臺灣周邊「火山島」的地理位置與特色配對，下列何者「正確」？',
+        options: [
+          'A. 龜山島位於臺灣東北方遠海，是達悟族的家鄉',
+          'B. 釣魚臺列嶼位於臺灣東北方海域；龜山島位於宜蘭外海',
+          'C. 太平島位於宜蘭外海，擁有著名的海底溫泉',
+          'D. 澎湖群島位於臺東外海，岩石為安山岩'
+        ],
+        answer: 1,
+        explain: '五大火山島順序為：①澎湖（玄武岩）→ ②釣魚臺列嶼（臺灣東北方）→ ③龜山島（宜蘭縣外海）→ ④綠島（海底溫泉）→ ⑤蘭嶼（達悟族）。太平島則是南海的珊瑚礁島喔！'
+      },
+      {
+        q: '3. 在等高線地形圖上，若看到「外圍等高線極為密集，但中央頂部卻是一大片稀疏空白」，這最可能是下列哪一種地形？',
+        options: ['A. 玉山山脈（山地）', 'B. 桃園臺地（臺地）', 'C. 嘉南平原（平原）', 'D. 苗栗丘陵（丘陵）'],
+        answer: 1,
+        explain: '臺地具有「頂部平坦、周邊陡峭」的特徵，因此邊緣陡坡等高線密集，頂部平台則呈大片稀疏空白！'
+      },
+      {
+        q: '4. 彰化平原與雲林平原皆位於濁水溪沖積扇上，但兩者的農業專門特色有所不同，請問下列何者正確？',
+        options: [
+          'A. 彰化專門生產花卉；雲林專門生產蔬果',
+          'B. 彰化專門生產茶樹；雲林專門生產甘蔗',
+          'C. 彰化專門養殖虱目魚；雲林專門種植花卉',
+          'D. 兩者皆以客家梯田種植果樹為主'
+        ],
+        answer: 0,
+        explain: '筆記口訣重點：彰化平原專門生產「花卉」，雲林平原專門生產「蔬果」；客家梯田種茶樹與果樹則是在「桃竹苗丘陵」！'
+      },
+      {
+        q: '5. 臺灣四種海岸類型中，哪一段海岸因為「海岸線過於平直、缺乏天然灣澳」，而在 1930 年代人工修建了港口？',
+        options: ['A. ① 北部山地灣澳海岸（基隆港）', 'B. ② 東部斷層海岸（花蓮港）', 'C. ③ 南部珊瑚礁海岸', 'D. ④ 西部沙洲潟湖海岸'],
+        answer: 1,
+        explain: '「東岸平直少灣澳，西岸沙洲養蚵蝦！」東部為斷層海岸（岩岸），海岸線過於平直缺乏灣澳，因此 1930 年代人工修建花蓮港。'
+      },
+      {
+        q: '6. 下列哪一座島嶼「不屬於」珊瑚礁島？',
+        options: ['A. 琉球嶼（小琉球）', 'B. 澎湖南方四島', 'C. 太平島與東沙島', 'D. 蘭嶼'],
+        answer: 3,
+        explain: '蘭嶼與綠島屬於「火山島」；琉球嶼（小琉球）、東沙島、太平島、澎湖南方四島則是四大「珊瑚礁島」！'
+      }
+    ];
+
+    // ==================== 狀態管理與互動邏輯 ====================
+    let is3D = true;
+    let currentZoom = 1;
+    let currentFilter = 'all';
+    let currentFeatureKey = 'mt_central';
+    let quizIndex = 0;
+    let quizScore = 0;
+
+    // 初始化
+    window.onload = function () {
+      selectFeature('mt_central');
+    };
+
+    // 切換 3D 立體傾斜 / 2D 俯視平面
+    function toggle3DView() {
+      is3D = !is3D;
+      const plane = document.getElementById('mapPlane');
+      const icon = document.getElementById('viewIcon');
+      const text = document.getElementById('viewText');
+
+      if (is3D) {
+        plane.classList.remove('flat');
+        plane.classList.add('tilted');
+        icon.textContent = '🏔️';
+        text.textContent = '視角：3D 立體傾斜';
+      } else {
+        plane.classList.remove('tilted');
+        plane.classList.add('flat');
+        icon.textContent = '🗺️';
+        text.textContent = '視角：2D 正射俯視';
+      }
+      applyPlaneTransform();
+    }
+
+    function zoomMap(delta) {
+      currentZoom = Math.min(1.45, Math.max(0.75, currentZoom + delta));
+      applyPlaneTransform();
+    }
+
+    function resetMap() {
+      currentZoom = 1;
+      is3D = true;
+      const plane = document.getElementById('mapPlane');
+      plane.classList.remove('flat');
+      plane.classList.add('tilted');
+      document.getElementById('viewIcon').textContent = '🏔️';
+      document.getElementById('viewText').textContent = '視角：3D 立體傾斜';
+      applyPlaneTransform();
+    }
+
+    function applyPlaneTransform() {
+      const plane = document.getElementById('mapPlane');
+      if (is3D) {
+        plane.style.transform = `rotateX(34deg) rotateZ(-8deg) scale(${currentZoom * 0.95})`;
+      } else {
+        plane.style.transform = `rotateX(0deg) rotateZ(0deg) scale(${currentZoom})`;
+      }
+    }
+
+    // 螢光筆圖層篩選
+    function setFilter(category) {
+      currentFilter = category;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-white', 'scale-105');
+      });
+      const activeBtn = document.getElementById(`filter-${category}`);
+      if (activeBtn) activeBtn.classList.add('ring-2', 'ring-white', 'scale-105');
+
+      const layers = ['mountain', 'hill', 'tableland', 'basin', 'plain', 'island', 'coast'];
+      layers.forEach(layer => {
+        const el = document.querySelector(`.layer-${layer}`);
+        if (!el) return;
+        if (category === 'all' || category === layer) {
+          el.style.opacity = '1';
+          el.style.pointerEvents = 'auto';
+        } else {
+          el.style.opacity = '0.16';
+          el.style.pointerEvents = 'none';
+        }
+      });
+
+      // 自動選取該分類的第一個代表項目
+      const firstMatch = Object.keys(GEO_DATA).find(k => GEO_DATA[k].category === category);
+      if (firstMatch) selectFeature(firstMatch);
+    }
+
+    // 選取地圖上的特定地形並更新右側面板
+    function selectFeature(key) {
+      const data = GEO_DATA[key];
+      if (!data) return;
+      currentFeatureKey = key;
+
+      // 移除舊的高亮動畫
+      document.querySelectorAll('.selected-feature').forEach(el => {
+        el.classList.remove('selected-feature');
+      });
+
+      // 為對應的 SVG 元素加上呼吸光暈
+      if (data.svgIds) {
+        data.svgIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('selected-feature');
+        });
+      }
+
+      // 更新右側卡片文字
+      const badge = document.getElementById('detailBadge');
+      badge.textContent = data.badge;
+      badge.className = `px-2.5 py-0.5 rounded-full text-xs font-bold border ${data.badgeClass}`;
+
+      document.getElementById('detailHeightTag').textContent = data.heightTag;
+      document.getElementById('detailEmoji').textContent = data.emoji;
+      document.getElementById('detailTitle').textContent = data.title;
+      document.getElementById('detailSubtitle').textContent = data.subtitle;
+
+      const ul = document.getElementById('detailPoints');
+      ul.innerHTML = data.points.map(p => `
+        <li class="flex items-start gap-2">
+          <span class="text-cyan-400 mt-1 text-xs">✦</span>
+          <span>${p}</span>
+        </li>
+      `).join('');
+
+      // 更新同系列快速切換按鈕
+      const siblings = Object.keys(GEO_DATA).filter(k => GEO_DATA[k].category === data.category);
+      const chipsContainer = document.getElementById('siblingChips');
+      chipsContainer.innerHTML = siblings.map(sKey => {
+        const isCurrent = sKey === key;
+        const shortName = GEO_DATA[sKey].title.replace(/（.*）/, '');
+        return `
+          <button onclick="selectFeature('${sKey}')"
+            class="px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+              isCurrent
+                ? 'bg-cyan-400 text-slate-950 shadow'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+            }">
+            ${shortName}
+          </button>
+        `;
+      }).join('');
+
+      // 繪製 3D 剖面圖與等高線模擬圖
+      document.getElementById('profileLabel').textContent = data.profileLabel;
+      document.getElementById('contourLabel').textContent = data.contourLabel;
+      document.getElementById('contourExplain').textContent = data.contourExplain;
+      renderProfileAndContour(data.profileType);
+    }
+
+    // 動態繪製 3D 地形側視剖面與 2D 等高線對照 SVG
+    function renderProfileAndContour(type) {
+      const pSvg = document.getElementById('profileSvg');
+      const cSvg = document.getElementById('contourSvg');
+
+      if (type === 'mountain') {
+        pSvg.innerHTML = `
+          <line x1="15" y1="112" x2="205" y2="112" stroke="#475569" stroke-width="1.5" />
+          <line x1="15" y1="60" x2="205" y2="60" stroke="#334155" stroke-dasharray="3,3" />
+          <text x="16" y="56" fill="#64748b" font-size="9">1000m</text>
+          <polygon points="25,112 75,38 110,16 148,45 195,112" fill="#d946ef" fill-opacity="0.35" stroke="#f0abfc" stroke-width="2.5" />
+          <polygon points="110,16 148,45 195,112 122,112" fill="#86198f" fill-opacity="0.45" />
+          <text x="92" y="13" fill="#f5d0fe" font-size="9" font-weight="bold">≥ 1000m</text>
+        `;
+        cSvg.innerHTML = `
+          <ellipse cx="110" cy="65" rx="82" ry="48" fill="none" stroke="#c026d3" stroke-width="1.4" />
+          <ellipse cx="110" cy="65" rx="64" ry="37" fill="none" stroke="#d946ef" stroke-width="1.5" />
+          <ellipse cx="110" cy="65" rx="46" ry="26" fill="none" stroke="#e879f9" stroke-width="1.6" />
+          <ellipse cx="110" cy="65" rx="28" ry="16" fill="none" stroke="#f0abfc" stroke-width="1.8" />
+          <ellipse cx="110" cy="65" rx="12" ry="7" fill="#e879f9" fill-opacity="0.3" stroke="#fdf4ff" stroke-width="2" />
+          <text x="97" y="68" fill="#ffffff" font-size="9" font-weight="bold">高</text>
+          <text x="18" y="22" fill="#94a3b8" font-size="9">低 (密集向內遞增)</text>
+        `;
+      } else if (type === 'tableland') {
+        pSvg.innerHTML = `
+          <line x1="15" y1="112" x2="205" y2="112" stroke="#475569" stroke-width="1.5" />
+          <polygon points="25,112 52,42 168,42 195,112" fill="#eab308" fill-opacity="0.35" stroke="#fde047" stroke-width="2.5" />
+          <line x1="55" y1="36" x2="165" y2="36" stroke="#fef08a" stroke-width="1.5" stroke-dasharray="4,2" />
+          <text x="82" y="30" fill="#fef08a" font-size="9.5" font-weight="bold">頂平、邊陡</text>
+        `;
+        cSvg.innerHTML = `
+          <rect x="24" y="16" width="172" height="98" rx="34" fill="none" stroke="#ca8a04" stroke-width="1.4" />
+          <rect x="30" y="21" width="160" height="88" rx="30" fill="none" stroke="#eab308" stroke-width="1.5" />
+          <rect x="36" y="26" width="148" height="78" rx="26" fill="none" stroke="#facc15" stroke-width="1.6" />
+          <rect x="42" y="31" width="136" height="68" rx="22" fill="#fef08a" fill-opacity="0.12" stroke="#fef08a" stroke-width="1.8" />
+          <text x="72" y="68" fill="#fef08a" font-size="10" font-weight="bold">頂部平坦空白</text>
+          <text x="12" y="12" fill="#94a3b8" font-size="8.5">外圍極密</text>
+        `;
+      } else if (type === 'basin') {
+        pSvg.innerHTML = `
+          <line x1="15" y1="112" x2="205" y2="112" stroke="#475569" stroke-width="1.5" />
+          <path d="M 15,50 L 38,32 L 72,94 L 148,94 L 182,32 L 205,50 L 205,112 L 15,112 Z"
+                fill="#06b6d4" fill-opacity="0.3" stroke="#22d3ee" stroke-width="2.5" />
+          <text x="80" y="86" fill="#67e8f9" font-size="9.5" font-weight="bold">中間低・四周高</text>
+        `;
+        cSvg.innerHTML = `
+          <ellipse cx="110" cy="65" rx="86" ry="50" fill="none" stroke="#0891b2" stroke-width="1.4" />
+          <ellipse cx="110" cy="65" rx="76" ry="43" fill="none" stroke="#06b6d4" stroke-width="1.5" />
+          <ellipse cx="110" cy="65" rx="66" ry="36" fill="#22d3ee" fill-opacity="0.12" stroke="#22d3ee" stroke-width="1.8" />
+          <!-- 示坡線指向低處 -->
+          <line x1="110" y1="29" x2="110" y2="37" stroke="#67e8f9" stroke-width="1.8" />
+          <line x1="110" y1="101" x2="110" y2="93" stroke="#67e8f9" stroke-width="1.8" />
+          <line x1="44" y1="65" x2="54" y2="65" stroke="#67e8f9" stroke-width="1.8" />
+          <line x1="176" y1="65" x2="166" y2="65" stroke="#67e8f9" stroke-width="1.8" />
+          <text x="85" y="68" fill="#67e8f9" font-size="9.5" font-weight="bold">盆底 (示坡線向內)</text>
+        `;
+      } else if (type === 'hill') {
+        pSvg.innerHTML = `
+          <line x1="15" y1="112" x2="205" y2="112" stroke="#475569" stroke-width="1.5" />
+          <path d="M 20,112 Q 55,62 85,84 Q 115,52 145,78 Q 175,64 200,112 Z"
+                fill="#f97316" fill-opacity="0.35" stroke="#fb923c" stroke-width="2.5" />
+          <text x="72" y="46" fill="#fdba74" font-size="9.5" font-weight="bold">起伏和緩 (<1000m)</text>
+        `;
+        cSvg.innerHTML = `
+          <ellipse cx="80" cy="68" rx="48" ry="32" fill="none" stroke="#ea580c" stroke-width="1.5" />
+          <ellipse cx="80" cy="68" rx="26" ry="17" fill="#fb923c" fill-opacity="0.2" stroke="#fdba74" stroke-width="1.6" />
+          <ellipse cx="152" cy="60" rx="42" ry="28" fill="none" stroke="#ea580c" stroke-width="1.5" />
+          <ellipse cx="152" cy="60" rx="20" ry="13" fill="#fb923c" fill-opacity="0.2" stroke="#fdba74" stroke-width="1.6" />
+          <text x="64" y="116" fill="#fdba74" font-size="9">圈數少、間距疏密適中</text>
+        `;
+      } else if (type === 'plain') {
+        pSvg.innerHTML = `
+          <line x1="15" y1="112" x2="205" y2="112" stroke="#475569" stroke-width="1.5" />
+          <polygon points="20,112 20,96 200,98 200,112" fill="#22c55e" fill-opacity="0.35" stroke="#4ade80" stroke-width="2.5" />
+          <text x="72" y="84" fill="#86efac" font-size="9.5" font-weight="bold">地勢平坦低緩</text>
+        `;
+        cSvg.innerHTML = `
+          <path d="M 20,35 Q 110,42 200,34" fill="none" stroke="#22c55e" stroke-width="1.5" />
+          <path d="M 20,95 Q 110,102 200,94" fill="none" stroke="#4ade80" stroke-width="1.5" />
+          <text x="58" y="68" fill="#86efac" font-size="10" font-weight="bold">間距極寬・幾乎無線</text>
+        `;
+      } else if (type === 'fan') {
+        pSvg.innerHTML = `
+          <line x1="15" y1="112" x2="205" y2="112" stroke="#475569" stroke-width="1.5" />
+          <polygon points="20,112 20,30 65,68 185,104 185,112" fill="#22c55e" fill-opacity="0.35" stroke="#4ade80" stroke-width="2.2" />
+          <text x="24" y="24" fill="#f5d0fe" font-size="9">山地出谷口</text>
+          <text x="95" y="82" fill="#86efac" font-size="9.5" font-weight="bold">▲ 沖積扇緩斜</text>
+        `;
+        cSvg.innerHTML = `
+          <path d="M 25,20 L 55,48 L 25,75" fill="none" stroke="#e879f9" stroke-width="2" />
+          <path d="M 75,25 Q 100,55 72,88" fill="none" stroke="#4ade80" stroke-width="1.6" />
+          <path d="M 105,18 Q 140,58 100,102" fill="none" stroke="#4ade80" stroke-width="1.6" />
+          <path d="M 140,12 Q 185,60 135,114" fill="none" stroke="#4ade80" stroke-width="1.6" />
+          <text x="115" y="122" fill="#86efac" font-size="9">扇狀弧線向低處展開</text>
+        `;
+      } else {
+        // 海岸地形
+        pSvg.innerHTML = `
+          <line x1="15" y1="90" x2="205" y2="90" stroke="#0284c7" stroke-width="2" />
+          <rect x="110" y="90" width="95" height="22" fill="#0369a1" fill-opacity="0.4" />
+          <path d="M 15,112 L 15,45 Q 75,55 110,90 L 110,112 Z" fill="#38bdf8" fill-opacity="0.3" stroke="#7dd3fc" stroke-width="2" />
+          <text x="135" y="83" fill="#38bdf8" font-size="9">海平面 (0m)</text>
+        `;
+        cSvg.innerHTML = `
+          <path d="M 85,15 Q 130,35 90,55 Q 140,75 88,95 Q 125,110 95,120" fill="none" stroke="#38bdf8" stroke-width="2.2" />
+          <path d="M 65,15 Q 105,35 70,55 Q 115,75 68,95 Q 100,110 75,120" fill="none" stroke="#7dd3fc" stroke-width="1.4" />
+          <text x="132" y="65" fill="#38bdf8" font-size="9.5" font-weight="bold">海洋</text>
+          <text x="20" y="65" fill="#cbd5e1" font-size="9.5">陸地海岸</text>
+        `;
+      }
+    }
+
+    // ==================== 彈窗與測驗控制 ====================
+    function openForcesModal() {
+      const m = document.getElementById('forcesModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function openQuizModal() {
+      quizIndex = 0;
+      quizScore = 0;
+      const m = document.getElementById('quizModal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      renderQuiz();
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function renderQuiz() {
+      const qObj = QUIZ_QUESTIONS[quizIndex];
+      document.getElementById('quizProgress').textContent = `第 ${quizIndex + 1} / ${QUIZ_QUESTIONS.length} 題`;
+      document.getElementById('quizQuestion').textContent = qObj.q;
+
+      const fb = document.getElementById('quizFeedback');
+      fb.classList.add('hidden');
+      document.getElementById('btnNextQuiz').classList.add('hidden');
+
+      const optsDiv = document.getElementById('quizOptions');
+      optsDiv.innerHTML = qObj.options.map((opt, idx) => `
+        <button onclick="checkAnswer(${idx})"
+          class="quiz-opt-btn w-full text-left p-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-sm text-slate-200 font-medium transition">
+          ${opt}
+        </button>
+      `).join('');
+    }
+
+    function checkAnswer(selectedIdx) {
+      const qObj = QUIZ_QUESTIONS[quizIndex];
+      const buttons = document.querySelectorAll('.quiz-opt-btn');
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === qObj.answer) {
+          btn.classList.remove('bg-slate-800/90', 'border-slate-700');
+          btn.classList.add('bg-emerald-500/25', 'border-emerald-400', 'text-emerald-200', 'font-bold');
+        } else if (idx === selectedIdx) {
+          btn.classList.remove('bg-slate-800/90', 'border-slate-700');
+          btn.classList.add('bg-rose-500/25', 'border-rose-400', 'text-rose-200');
+        }
+      });
+
+      const fb = document.getElementById('quizFeedback');
+      fb.classList.remove('hidden');
+      if (selectedIdx === qObj.answer) {
+        quizScore++;
+        fb.className = 'mt-4 p-3.5 rounded-xl text-sm bg-emerald-950/60 border border-emerald-500/40 text-emerald-200';
+        fb.innerHTML = `✅ <strong>答對了！</strong> ${qObj.explain}`;
+      } else {
+        fb.className = 'mt-4 p-3.5 rounded-xl text-sm bg-rose-950/60 border border-rose-500/40 text-rose-200';
+        fb.innerHTML = `❌ <strong>再想一下喔！</strong> ${qObj.explain}`;
+      }
+
+      const nextBtn = document.getElementById('btnNextQuiz');
+      nextBtn.classList.remove('hidden');
+      nextBtn.textContent = quizIndex < QUIZ_QUESTIONS.length - 1 ? '下一題 →' : '查看總成績 🏆';
+    }
+
+    function nextQuiz() {
+      quizIndex++;
+      if (quizIndex < QUIZ_QUESTIONS.length) {
+        renderQuiz();
+      } else {
+        document.getElementById('quizProgress').textContent = '測驗完成！';
+        document.getElementById('quizQuestion').textContent = `🎉 恭喜完成隨堂挑戰！你的得分：${quizScore} / ${QUIZ_QUESTIONS.length} 題`;
+        document.getElementById('quizOptions').innerHTML = `
+          <div class="p-4 rounded-xl bg-slate-800/70 border border-slate-700 text-sm text-slate-300 leading-relaxed">
+            你可以關閉視窗繼續點擊地圖上的不同螢光地形，複習「等高線判讀」與「離島地質分類」喔！
+          </div>
+        `;
+        document.getElementById('quizFeedback').classList.add('hidden');
+        const nextBtn = document.getElementById('btnNextQuiz');
+        nextBtn.textContent = '重新測驗 🔄';
+        nextBtn.onclick = openQuizModal;
+      }
+    }
+  </script>
+</body>
+</html>
