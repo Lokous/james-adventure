@@ -1,1536 +1,1866 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>勇闖江湖的詹姆士｜國中社會科智慧筆記與錯題修煉場</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <title>勇闖江湖的詹姆士｜AI 知識星球儀 Knowledge Galaxy</title>
   <style>
+    :root {
+      --bg-deep: #060913;
+      --bg-panel: rgba(15, 23, 42, 0.95);
+      --border-glow: rgba(56, 189, 248, 0.35);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-green: #10b981;
+      --accent-blue: #38bdf8;
+      --accent-red: #f43f5e;
+      --accent-gold: #fbbf24;
+      --accent-purple: #a855f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Noto Sans TC', 'Inter', sans-serif;
-      background-color: #090d16;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: radial-gradient(circle at 50% 40%, #0f172a 0%, #060913 100%);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      background: rgba(6, 9, 19, 0.96);
+      border-bottom: 1px solid var(--border-glow);
+      z-index: 30;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.05rem; }
+    .brand span { color: var(--accent-blue); }
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      background: rgba(30, 41, 59, 0.85);
+      padding: 5px 13px;
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+    .crumb { cursor: pointer; color: var(--accent-blue); }
+    .crumb:hover { text-decoration: underline; }
+    .crumb.active { color: var(--text-main); font-weight: 600; cursor: default; text-decoration: none; }
+    .toolbar { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-primary { background: linear-gradient(135deg, #0284c7, #2563eb); color: white; box-shadow: 0 0 12px rgba(37, 99, 235, 0.4); }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 18px rgba(56, 189, 248, 0.65); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-ai { background: linear-gradient(135deg, #7c3aed, #db2777); color: white; box-shadow: 0 0 14px rgba(168, 85, 247, 0.45); }
+    .btn-ai:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.1); }
+    .btn-ai:disabled { opacity: 0.5; cursor: wait; }
+    .btn-green { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); }
+    .btn-red { background: rgba(244, 63, 94, 0.18); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); }
+    .btn-ghost { background: rgba(30, 41, 59, 0.85); color: var(--text-main); border: 1px solid rgba(148, 163, 184, 0.3); }
+    .btn-mini { padding: 3px 7px; font-size: 0.74rem; border-radius: 6px; }
+
+    /* Workspace & Custom Cosmic Cursor */
+    .workspace { display: flex; flex: 1; position: relative; overflow: hidden; }
+    #galaxy-stage { flex: 1; min-width: 240px; position: relative; overflow: hidden; }
+    #galaxy-stage.custom-cursor-active,
+    #galaxy-stage.custom-cursor-active .planet-node { cursor: none !important; }
+    #cosmic-cursor {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.85));
+      transition: transform 0.06s ease-out;
+    }
+    #cosmic-cursor img { width: 38px; height: 38px; object-fit: contain; border-radius: 50%; }
+    .cursor-emoji { font-size: 30px; line-height: 1; }
+    canvas#bg-stars { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+    /* Resizable Splitter Handle */
+    #panel-resizer {
+      width: 10px;
+      cursor: col-resize;
+      background: rgba(15, 23, 42, 0.9);
+      border-left: 1px solid var(--border-glow);
+      border-right: 1px solid rgba(148, 163, 184, 0.15);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 25;
+      user-select: none;
+      touch-action: none;
+      transition: background 0.2s;
+    }
+    #panel-resizer.visible { display: flex; }
+    #panel-resizer:hover,
+    #panel-resizer.dragging {
+      background: rgba(56, 189, 248, 0.28);
+    }
+    #panel-resizer::after {
+      content: "⋮";
+      color: var(--accent-blue);
+      font-size: 16px;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 0.76rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 10;
+      max-width: calc(100% - 32px);
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-green { background: #10b981; box-shadow: 0 0 8px #10b981; }
+    .dot-blue { border: 2px solid #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+    .dot-red { border: 2px solid #f43f5e; box-shadow: 0 0 8px #f43f5e; }
+
+    /* Planet Nodes & Hover Management Controls */
+    .planet-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
+      padding: 12px;
+    }
+    .planet-node:hover { transform: translate(-50%, -50%) scale(1.08); z-index: 15; }
+    .planet-title { font-weight: 700; font-size: 0.92rem; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95); line-height: 1.25; pointer-events: none; }
+    .planet-meta { font-size: 0.7rem; color: rgba(255, 255, 255, 0.9); margin-top: 4px; background: rgba(0, 0, 0, 0.52); padding: 2px 7px; border-radius: 10px; pointer-events: none; }
+
+    .planet-check {
+      position: absolute;
+      top: 3%;
+      right: 3%;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 2px solid var(--accent-blue);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: bold;
+      z-index: 16;
+      cursor: pointer;
+    }
+    .planet-check.checked { background: var(--accent-blue); color: #060913; }
+
+    .planet-actions {
+      position: absolute;
+      bottom: -12px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 17;
+    }
+    .planet-node:hover .planet-actions { opacity: 1; }
+    .planet-act-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.45);
       color: #f8fafc;
-      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      padding: 0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+    }
+    .planet-act-btn:hover { transform: scale(1.15); border-color: var(--accent-blue); }
+    .planet-act-btn.del:hover { border-color: var(--accent-red); background: rgba(244, 63, 94, 0.3); }
+
+    /* Right Drawer (Resizable) */
+    #detail-panel {
+      width: 52vw;
+      min-width: 320px;
+      max-width: 85vw;
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      padding: 18px 22px;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 22;
+      flex-shrink: 0;
+    }
+    #detail-panel.open { display: flex; }
+
+    .ratio-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: rgba(30, 41, 59, 0.65);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      flex-wrap: wrap;
+    }
+    .ratio-btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+    .ratio-btn {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 3px 8px;
+      font-size: 0.74rem;
+      border-radius: 6px;
+    }
+    .ratio-btn:hover, .ratio-btn.active {
+      color: #7dd3fc;
+      border-color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.18);
     }
 
-    /* 背景暗黑科技網格與微光 */
-    .bg-cyber-grid {
-      background-image:
-        radial-gradient(circle at 18% 12%, rgba(16, 185, 129, 0.12), transparent 36%),
-        radial-gradient(circle at 82% 18%, rgba(245, 158, 11, 0.10), transparent 36%),
-        radial-gradient(circle at 50% 85%, rgba(168, 85, 247, 0.10), transparent 40%),
-        linear-gradient(to right, rgba(30, 41, 59, 0.35) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(30, 41, 59, 0.35) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 100% 100%, 48px 48px, 48px 48px;
-    }
+    .drawer-tabs { display: flex; gap: 8px; border-bottom: 1px solid rgba(148, 163, 184, 0.2); padding-bottom: 8px; }
+    .tab-btn { flex: 1; justify-content: center; background: rgba(30, 41, 59, 0.6); color: var(--text-muted); }
+    .tab-btn.active { background: rgba(56, 189, 248, 0.18); color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.4); }
 
-    /* 各科霓虹邊框與懸停發光 */
-    .card-geo:hover {
-      border-color: rgba(16, 185, 129, 0.65);
-      box-shadow: 0 12px 32px -8px rgba(16, 185, 129, 0.25);
+    .note-card {
+      background: rgba(30, 41, 59, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 12px;
+      padding: 16px;
     }
-    .card-his:hover {
-      border-color: rgba(245, 158, 11, 0.65);
-      box-shadow: 0 12px 32px -8px rgba(245, 158, 11, 0.25);
+    .note-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 10px;
     }
-    .card-civ:hover {
-      border-color: rgba(168, 85, 247, 0.65);
-      box-shadow: 0 12px 32px -8px rgba(168, 85, 247, 0.25);
-    }
+    .note-card h4 { color: var(--accent-green); font-size: 1.04rem; line-height: 1.4; }
+    .card-tools { display: flex; gap: 4px; flex-shrink: 0; }
+    .note-card ul { padding-left: 20px; color: #e2e8f0; font-size: 0.92rem; line-height: 1.7; }
 
-    /* 自訂捲軸 */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.86rem;
+      background: rgba(15, 23, 42, 0.75);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .comp-table th, .comp-table td { border: 1px solid rgba(148, 163, 184, 0.22); padding: 8px 11px; text-align: left; line-height: 1.5; }
+    .comp-table th { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; font-weight: 600; }
 
-    /* 平滑展開動畫 */
-    @keyframes fadeSlideIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+    .mnemonic-box {
+      margin-top: 12px;
+      background: rgba(251, 191, 36, 0.14);
+      border-left: 3px solid var(--accent-gold);
+      padding: 9px 13px;
+      font-size: 0.88rem;
+      color: #fde68a;
+      border-radius: 0 8px 8px 0;
     }
-    .animate-fade-in {
-      animation: fadeSlideIn 0.3s ease-out forwards;
+    .media-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .pill-link { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 8px; font-size: 0.8rem; text-decoration: none; font-weight: 600; }
+    .pill-yt { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.45); }
+    .pill-3d { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.45); }
+    .pill-txt { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.86);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      padding: 16px;
     }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #0f172a;
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 740px;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.2); }
+    .hierarchy-box { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 13px; margin-bottom: 14px; }
+    .hierarchy-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; margin-top: 8px; }
+    @media (max-width: 600px) { .hierarchy-grid { grid-template-columns: 1fr; } }
+    .level-card { background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(148, 163, 184, 0.22); border-radius: 8px; padding: 8px; }
+    .level-card label { display: block; font-size: 0.75rem; color: var(--accent-blue); font-weight: 600; margin-bottom: 4px; }
+    select, input, textarea {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: white;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+    }
+    .new-level-input { margin-top: 6px; border-color: var(--accent-green); background: rgba(16, 185, 129, 0.14); display: none; }
+    .new-level-input.visible { display: block; }
+    .path-preview { margin-top: 8px; padding: 7px 11px; background: rgba(6, 9, 19, 0.8); border-radius: 8px; font-size: 0.82rem; color: #34d399; border: 1px dashed rgba(52, 211, 153, 0.45); }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.83rem; color: var(--text-muted); margin-bottom: 5px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    .ai-box {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(37, 99, 235, 0.14));
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      border-radius: 12px;
+      padding: 13px;
+      margin-bottom: 14px;
+    }
+    .route-badge-box {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    .transcript-archive-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(56, 189, 248, 0.18);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      padding: 4px 11px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .transcript-archive-link:hover {
+      background: rgba(56, 189, 248, 0.32);
+      transform: translateY(-1px);
+    }
+    .badge-clean {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.22);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .quiz-item { background: rgba(30, 41, 59, 0.65); border: 1px solid rgba(148, 163, 184, 0.22); border-radius: 12px; padding: 15px; margin-bottom: 13px; }
+    .quiz-opt { display: block; width: 100%; text-align: left; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(148, 163, 184, 0.25); color: var(--text-main); padding: 9px 13px; border-radius: 8px; margin-top: 7px; cursor: pointer; }
+    .quiz-opt.selected { border-color: var(--accent-blue); background: rgba(56, 189, 248, 0.2); }
+    .quiz-opt.correct { border-color: #10b981; background: rgba(16, 185, 129, 0.25); }
+    .quiz-opt.wrong { border-color: #f43f5e; background: rgba(244, 63, 94, 0.25); }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-cyber-grid">
+<body>
 
-  <!-- ==================== 頂部導覽列 ==================== -->
-  <header class="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/90">
-    <div class="max-w-[1440px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-      <!-- 品牌識別 -->
-      <div onclick="switchMainTab('all')" class="flex items-center gap-3 cursor-pointer group">
-        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 via-cyan-400 to-amber-400 p-[2px] shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition">
-          <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-xl">
-            🧭
-          </div>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-white via-cyan-100 to-emerald-200 bg-clip-text text-transparent">
-              勇闖江湖的詹姆士
-            </h1>
-            <span class="hidden md:inline-block text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              社會科修煉系統
-            </span>
-          </div>
-          <p class="text-xs text-slate-400 hidden sm:block">地理 × 歷史 × 公民｜統一筆記統整庫 & 錯題章節追蹤</p>
-        </div>
-      </div>
+<div id="cosmic-cursor"><span class="cursor-emoji">🚀</span></div>
 
-      <!-- 右側核心功能操作鈕 -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <button onclick="openNoteUploadModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition">
-          <span>📥</span>
-          <span>上傳整理筆記</span>
-        </button>
+<header>
+  <div class="brand">🪐 勇闖江湖的詹姆士 <span>｜AI 知識星球儀</span></div>
+  <div class="breadcrumbs" id="breadcrumbs"></div>
+  <div class="toolbar">
+    <button class="btn-ghost" onclick="openConfigModal()" id="cloud-status-btn">⚙️ AI 雲端設定</button>
+    <button class="btn-ghost" onclick="openCursorModal()">🚀 太空游標</button>
+    <button class="btn-green" onclick="openNoteModal()">📘 AI 整理筆記/影音</button>
+    <button class="btn-red" onclick="openMistakeModal()">⚔️ AI 淨化錯題本</button>
+    <button class="btn-primary" id="quiz-btn" disabled onclick="openQuizConfigModal()">🎯 雙軌複選出題 (0)</button>
+  </div>
+</header>
 
-        <button onclick="openMistakeUploadModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-rose-500/20 transition">
-          <span>📕</span>
-          <span>登錄新錯題</span>
-        </button>
+<div class="workspace" id="workspace">
+  <div id="galaxy-stage" class="custom-cursor-active">
+    <canvas id="bg-stars"></canvas>
+    <div id="planets-container"></div>
 
-        <button onclick="openBackupModal()" title="匯出或匯入學習紀錄" class="px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition">
-          <span>💾</span>
-          <span class="hidden sm:inline">備份/還原</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 分頁導覽列 -->
-    <div class="max-w-[1440px] mx-auto px-4 pt-1 pb-2.5 flex items-center justify-between gap-3 overflow-x-auto">
-      <nav class="flex items-center gap-1.5">
-        <button onclick="switchMainTab('all')" id="tab-all" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-950 shadow transition whitespace-nowrap">
-          🏯 江湖總覽
-        </button>
-        <button onclick="switchMainTab('geo')" id="tab-geo" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition whitespace-nowrap">
-          🌍 地理秘笈
-        </button>
-        <button onclick="switchMainTab('his')" id="tab-his" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition whitespace-nowrap">
-          📜 歷史編年
-        </button>
-        <button onclick="switchMainTab('civ')" id="tab-civ" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition whitespace-nowrap">
-          ⚖️ 公民法典
-        </button>
-        <button onclick="switchMainTab('mistakes')" id="tab-mistakes" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition whitespace-nowrap flex items-center gap-1.5">
-          <span>⚔️ 錯題修煉題庫</span>
-          <span id="navMistakeCount" class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[11px]">0</span>
-        </button>
-      </nav>
-
-      <!-- 搜尋框 -->
-      <div class="relative hidden md:block w-64">
-        <input id="globalSearchInput" oninput="renderCurrentView()" type="text" placeholder="搜尋單元、關鍵字或章節..."
-          class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400" />
-        <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs">🔍</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- ==================== 主內容區 ==================== -->
-  <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 py-6 space-y-6">
-
-    <!-- 1. 江湖修煉儀表板橫幅 -->
-    <section id="heroDashboard" class="bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden">
-      <div class="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
-      <div class="absolute right-32 -bottom-16 w-56 h-56 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center relative z-10">
-        <!-- 左側歡迎詞與快捷入口 -->
-        <div class="lg:col-span-7 space-y-3">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-xs text-cyan-300 font-semibold">
-            <span>⚔️ 國中社會科全攻略基地</span>
-            <span class="text-slate-500">|</span>
-            <span id="todayDateLabel" class="text-slate-300">準備好迎接會考與段考了嗎？</span>
-          </div>
-          <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
-            歡迎回到修煉場，詹姆士！<br class="sm:hidden" />
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-300 to-amber-300">把雜亂講義變成你的獨家武功秘笈</span>
-          </h2>
-          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-            上傳補習班講義 PDF、手寫筆記照片或線上教學網址，系統自動幫你統整成一致的重點圖卡；考卷寫錯的題目拍下來丟進錯題庫，自動標註課本章節出處與詳解！
-          </p>
-
-          <!-- 快捷行動列 -->
-          <div class="pt-1 flex flex-wrap items-center gap-2.5">
-            <button onclick="openNoteUploadModal()" class="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-200 text-xs sm:text-sm font-bold flex items-center gap-2 transition">
-              <span>📄</span>
-              <span>丟入 PDF / 照片 / 網址 → 生成統一筆記</span>
-            </button>
-            <button onclick="switchMainTab('mistakes')" class="px-4 py-2.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-200 text-xs sm:text-sm font-bold flex items-center gap-2 transition">
-              <span>🎯</span>
-              <span>進入錯題修煉場 (<span id="heroPendingMistakes">0</span> 題待複習)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 右側數據統計與三科戰力條 -->
-        <div class="lg:col-span-5 grid grid-cols-3 gap-3 bg-slate-950/75 border border-slate-800/90 rounded-2xl p-4">
-          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
-            <div class="text-xs text-slate-400 font-semibold">已收錄秘笈</div>
-            <div id="statTotalNotes" class="text-2xl sm:text-3xl font-black text-cyan-300 mt-1">0</div>
-            <div class="text-[11px] text-emerald-400 mt-0.5">統一格式圖卡</div>
-          </div>
-
-          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
-            <div class="text-xs text-slate-400 font-semibold">錯題總收錄</div>
-            <div id="statTotalMistakes" class="text-2xl sm:text-3xl font-black text-rose-400 mt-1">0</div>
-            <div id="statMasteredLabel" class="text-[11px] text-slate-400 mt-0.5">已精熟 0 題</div>
-          </div>
-
-          <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-center">
-            <div class="text-xs text-slate-400 font-semibold">錯題精熟率</div>
-            <div id="statMasteryRate" class="text-2xl sm:text-3xl font-black text-amber-300 mt-1">0%</div>
-            <div class="text-[11px] text-amber-400/80 mt-0.5">持續修煉中</div>
-          </div>
-
-          <!-- 三科分布進度條 -->
-          <div class="col-span-3 pt-1 space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="text-slate-400 font-semibold">三科筆記館藏分布</span>
-              <span id="subjectRatioText" class="text-slate-300 font-medium">地理 0｜歷史 0｜公民 0</span>
-            </div>
-            <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden flex">
-              <div id="barGeo" class="bg-emerald-400 h-full transition-all duration-500" style="width: 34%"></div>
-              <div id="barHis" class="bg-amber-400 h-full transition-all duration-500" style="width: 33%"></div>
-              <div id="barCiv" class="bg-purple-400 h-full transition-all duration-500" style="width: 33%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== 視圖 A：統一風格重點筆記庫 (總覽 / 地理 / 歷史 / 公民) ==================== -->
-    <section id="notesSection" class="space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2.5">
-          <h3 id="notesSectionTitle" class="text-lg sm:text-xl font-black text-white">📚 江湖武功秘笈庫（統一風格重點筆記）</h3>
-          <span id="notesFilterBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300 border border-slate-700">全部科目</span>
-        </div>
-        <button onclick="openNoteUploadModal()" class="text-xs font-bold text-cyan-300 hover:text-cyan-200 flex items-center gap-1">
-          <span>＋ 新增或上傳檔案轉成筆記卡</span>
-        </button>
-      </div>
-
-      <!-- 筆記卡片網格 -->
-      <div id="notesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        <!-- 由 JS 動態渲染統一格式筆記卡 -->
-      </div>
-    </section>
-
-    <!-- ==================== 視圖 B：專屬錯題江湖題庫 ==================== -->
-    <section id="mistakesSection" class="hidden space-y-4">
-      <div class="bg-slate-900/90 border border-rose-500/30 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h3 class="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-            <span>⚔️ 詹姆士的錯題修煉題庫</span>
-            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">先重做再看詳解</span>
-          </h3>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1">
-            每道錯題皆預設隱藏答案，讓你先重新挑戰！點擊「查看解答與章節出處」即可顯示完整解析與課本對應章節。
-          </p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <select id="mistakeSubjectFilter" onchange="renderMistakes()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 font-semibold focus:outline-none focus:border-rose-400">
-            <option value="all">全部科目錯題</option>
-            <option value="geo">🌍 地理科</option>
-            <option value="his">📜 歷史科</option>
-            <option value="civ">⚖️ 公民科</option>
-          </select>
-
-          <select id="mistakeStatusFilter" onchange="renderMistakes()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-200 font-semibold focus:outline-none focus:border-rose-400">
-            <option value="all">全部狀態</option>
-            <option value="pending">🔥 待複習（未精熟）</option>
-            <option value="mastered">✅ 已精熟斬殺</option>
-          </select>
-
-          <button onclick="openMistakeUploadModal()" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs sm:text-sm shadow-lg shadow-rose-500/25 transition">
-            + 上傳新錯題
-          </button>
-        </div>
-      </div>
-
-      <!-- 錯題卡片列表 -->
-      <div id="mistakesList" class="space-y-4">
-        <!-- 由 JS 動態渲染錯題卡片 -->
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ==================== 彈窗 1：查看統一筆記完整細節 ==================== -->
-  <div id="noteDetailModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-fade-in">
-      <button onclick="closeModal('noteDetailModal')" class="absolute top-5 right-5 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
-      <div id="noteDetailContent">
-        <!-- 動態填入統一結構化筆記內容 -->
-      </div>
+    <div class="legend">
+      <div style="font-weight:700; color:#f8fafc; margin-bottom:2px;">🔭 星球狀態光譜與管理說明</div>
+      <div class="legend-item"><span class="dot dot-green"></span> 綠色核心與體積：筆記、比較表與影音滋養度</div>
+      <div class="legend-item"><span class="dot dot-blue"></span> 藍色外框光暈：已閱讀且測驗熟練</div>
+      <div class="legend-item"><span class="dot dot-red"></span> 紅色外框光暈：錯題偏多需加強複習</div>
+      <div style="color:#64748b; font-size:0.73rem; margin-top:2px;">💡 游標移至星球下方可「✏️改名 / 🗑️刪除」｜開啟右側筆記時可拖曳中間分隔條自由調整比例</div>
     </div>
   </div>
 
-  <!-- ==================== 彈窗 2：功能一【智慧筆記上傳與統一格式生成工廠】 ==================== -->
-  <div id="noteUploadModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-emerald-500/40 rounded-3xl max-w-4xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto animate-fade-in">
-      <button onclick="closeModal('noteUploadModal')" class="absolute top-5 right-5 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
-      
-      <div class="flex items-center gap-2.5">
-        <span class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl">📥</span>
-        <div>
-          <h3 class="text-xl font-black text-white">智慧筆記整理工廠（自動統一視覺與重點格式）</h3>
-          <p class="text-xs text-slate-400">上傳 PDF、筆記照片，或貼上線上教學網站／講義文字，AI 自動幫你淬鍊成「江湖秘笈卡」</p>
-        </div>
+  <!-- Draggable Splitter Handle -->
+  <div id="panel-resizer" title="按住左右拖曳，自由調整星球與筆記顯示比例"></div>
+
+  <aside id="detail-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <h3 id="panel-title" style="color:var(--accent-blue); font-size:1.08rem;">單元詳情</h3>
+        <button class="btn-ghost btn-mini" id="panel-rename-btn" title="重新命名此星球">✏️ 改名</button>
       </div>
+      <button class="btn-ghost" style="padding:4px 10px;" onclick="closeDetailPanel()">✕</button>
+    </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
-        <!-- 左側：資料來源輸入區 (6欄) -->
-        <div class="lg:col-span-6 space-y-4">
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">1. 選擇科目</label>
-              <select id="uploadNoteSubject" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-semibold focus:outline-none focus:border-emerald-400">
-                <option value="geo">🌍 地理科</option>
-                <option value="his">📜 歷史科</option>
-                <option value="civ">⚖️ 公民科</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">2. 冊別／章節標註</label>
-              <input id="uploadNoteChapter" type="text" placeholder="例：國一上 第3章 臺灣的氣候"
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
-            </div>
-          </div>
+    <!-- Quick Ratio Preset Bar -->
+    <div class="ratio-bar">
+      <span style="font-size:0.74rem; color:var(--text-muted);">📐 視窗比例（或拖曳左側分隔線）：</span>
+      <div class="ratio-btn-group">
+        <button class="ratio-btn" id="ratio-35" onclick="setPanelRatio(35)">🔭 星球為主 (35%)</button>
+        <button class="ratio-btn active" id="ratio-52" onclick="setPanelRatio(52)">⚖️ 均分 (52%)</button>
+        <button class="ratio-btn" id="ratio-72" onclick="setPanelRatio(72)">📖 專注筆記 (72%)</button>
+      </div>
+    </div>
 
-          <!-- 檔案拖曳上傳區 (支援 PDF / JPG / PNG / TXT) -->
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">3. 上傳檔案（PDF 講義 / 筆記照片 JPG·PNG / 文字檔）</label>
-            <label for="noteFileInput" class="border-2 border-dashed border-slate-700 hover:border-emerald-400 bg-slate-950/60 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition">
-              <span class="text-2xl mb-1">📎</span>
-              <span class="text-xs font-bold text-emerald-300">點擊選擇檔案或拖曳至此</span>
-              <span class="text-[11px] text-slate-500 mt-0.5">支援 PDF、筆記拍照截圖 (JPG/PNG)、TXT 講義</span>
-              <input id="noteFileInput" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md" onchange="handleNoteFileUpload(event)" class="hidden" />
-            </label>
-            <div id="noteFilePreviewBox" class="hidden mt-2 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2 overflow-hidden">
-                <img id="noteImgThumb" class="hidden w-10 h-10 rounded-lg object-cover border border-slate-600" alt="筆記預覽" />
-                <span id="noteFileIcon" class="text-lg">📄</span>
-                <span id="noteFileName" class="text-xs text-slate-200 truncate font-medium">檔案名稱</span>
-              </div>
-              <button onclick="clearNoteFile()" class="text-xs text-rose-400 hover:underline px-2">移除</button>
-            </div>
-          </div>
+    <div id="panel-stats" style="font-size:0.82rem; color:var(--text-muted);"></div>
+    <button class="btn-primary" style="width:100%; justify-content:center;" id="panel-quiz-btn">🎯 立即檢測本單元（錯題＋AI變形題）</button>
 
-          <!-- 線上教學網址 -->
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">4. 或貼上線上教學網址（YouTube / 教學文章連結）</label>
-            <input id="uploadNoteUrl" type="url" placeholder="https://..."
-              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400" />
-          </div>
+    <div class="drawer-tabs">
+      <button class="tab-btn active" id="tab-notes-btn" onclick="switchDrawerTab('notes')">📘 統一風格筆記與比較表</button>
+      <button class="tab-btn" id="tab-mistakes-btn" onclick="switchDrawerTab('mistakes')">⚔️ 無筆跡錯題本</button>
+    </div>
 
-          <!-- 貼上原始筆記/重點文字 -->
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">5. 講義內容或課堂板書文字（可補充說明）</label>
-            <textarea id="uploadNoteRawText" rows="4" placeholder="貼上老師的重點整理、課文段落，或讓 AI 直接讀取上方上傳的筆記圖片 / PDF..."
-              class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"></textarea>
-          </div>
+    <div id="panel-content-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+  </aside>
+</div>
 
-          <button id="btnGenerateUnifiedNote" onclick="generateUnifiedNote()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition">
-            <span>✨</span>
-            <span>一鍵生成統一風格重點筆記</span>
-          </button>
-        </div>
-
-        <!-- 右側：統一格式預覽與微調區 (6欄) -->
-        <div class="lg:col-span-6 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider">📋 統一筆記模板預覽（可手動微調）</span>
-              <span id="noteGenStatus" class="text-[11px] text-slate-400">等待輸入資料...</span>
-            </div>
-
-            <div class="space-y-3">
-              <div>
-                <label class="text-[11px] text-slate-400 font-bold">單元標題</label>
-                <input id="previewNoteTitle" type="text" placeholder="生成後自動填入單元名稱..."
-                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm font-bold text-white mt-0.5" />
-              </div>
-
-              <div>
-                <label class="text-[11px] text-slate-400 font-bold">💡 核心觀念一句話</label>
-                <input id="previewNoteCore" type="text" placeholder="一句話貫穿本單元靈魂..."
-                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-cyan-200 mt-0.5" />
-              </div>
-
-              <div>
-                <label class="text-[11px] text-slate-400 font-bold">📌 結構化重點條列（每行一點）</label>
-                <textarea id="previewNotePoints" rows="5" placeholder="• 重點一&#10;• 重點二&#10;• 重點三"
-                  class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-200 mt-0.5 leading-relaxed"></textarea>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div>
-                  <label class="text-[11px] text-amber-300 font-bold">🔥 江湖必背口訣</label>
-                  <input id="previewNoteMnemonic" type="text" placeholder="順口溜或記憶法..."
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-amber-200 mt-0.5" />
-                </div>
-                <div>
-                  <label class="text-[11px] text-rose-300 font-bold">🎯 段考／會考高頻考點</label>
-                  <input id="previewNoteHotspot" type="text" placeholder="最常考的比較或陷阱..."
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-rose-200 mt-0.5" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <button onclick="saveUnifiedNote()" class="mt-4 w-full py-2.5 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-black text-sm shadow transition">
-            💾 確認儲存並上架至筆記庫
-          </button>
-        </div>
+<!-- Cloud GAS Config Modal -->
+<div class="modal-backdrop" id="config-modal">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <h3>⚙️ 串接 Google Apps Script 雲端 AI 大腦</h3>
+      <button class="btn-ghost" onclick="closeConfigModal()">✕</button>
+    </div>
+    <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:12px;">
+      貼上你部署好的 Google Apps Script 網頁應用程式網址（結尾為 <code>/exec</code>），系統就會自動將逐字稿存入 <code>Knowledge Galaxy / KnowledgeGalaxy_Transcripts</code> 資料夾，並與試算表 <code>GalaxyDB</code> 雙向同步！
+    </p>
+    <div class="form-group">
+      <label>Google Apps Script 網址（未填寫時自動使用本地智慧模擬模式）</label>
+      <input type="url" id="gas-url-input" placeholder="https://script.google.com/macros/s/....../exec" />
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+      <button class="btn-green" onclick="manualSyncNow()">☁️ 立即手動同步至試算表</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-ghost" onclick="closeConfigModal()">取消</button>
+        <button class="btn-primary" onclick="saveGasUrl()">💾 儲存並連線</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- ==================== 彈窗 3：功能二【上傳新錯題與自動解析章節出處】 ==================== -->
-  <div id="mistakeUploadModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-rose-500/40 rounded-3xl max-w-4xl w-full p-6 sm:p-7 shadow-2xl relative max-h-[92vh] overflow-y-auto animate-fade-in">
-      <button onclick="closeModal('mistakeUploadModal')" class="absolute top-5 right-5 w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
+<!-- Cursor Modal -->
+<div class="modal-backdrop" id="cursor-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3>🚀 選擇你的宇宙探索載具</h3>
+      <button class="btn-ghost" onclick="closeCursorModal()">✕</button>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:12px 0;">
+      <div class="btn-ghost" style="flex-direction:column; padding:12px;" onclick="setCosmicCursor('emoji', '🚀')"><span style="font-size:1.8rem;">🚀</span><span>火箭</span></div>
+      <div class="btn-ghost" style="flex-direction:column; padding:12px;" onclick="setCosmicCursor('emoji', '🧑‍🚀')"><span style="font-size:1.8rem;">🧑‍🚀</span><span>宇航員</span></div>
+      <div class="btn-ghost" style="flex-direction:column; padding:12px;" onclick="setCosmicCursor('emoji', '🛸')"><span style="font-size:1.8rem;">🛸</span><span>飛碟</span></div>
+      <div class="btn-ghost" style="flex-direction:column; padding:12px;" onclick="setCosmicCursor('default', '')"><span style="font-size:1.8rem;">🖱️</span><span>預設</span></div>
+    </div>
+    <div class="form-group">
+      <label>或上傳專屬 PNG/JPG 圖片作為游標：</label>
+      <input type="file" accept="image/*" onchange="uploadCustomCursor(event)" />
+    </div>
+    <div style="text-align:right;"><button class="btn-primary" onclick="closeCursorModal()">完成</button></div>
+  </div>
+</div>
 
-      <div class="flex items-center gap-2.5">
-        <span class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-xl">📕</span>
-        <div>
-          <h3 class="text-xl font-black text-white">登錄新錯題（自動分析章節出處與詳解）</h3>
-          <p class="text-xs text-slate-400">上傳考卷錯題照片或貼上題目文字，系統自動比對課本章節出處並生成逐項詳解</p>
+<!-- Modal 1: Create or Edit Note -->
+<div class="modal-backdrop" id="note-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="note-modal-heading">📘 AI 筆記重組工廠（手寫圖 / YouTube ➔ 統一風格比較表）</h3>
+      <button class="btn-ghost" onclick="closeNoteModal()">✕</button>
+    </div>
+
+    <div class="hierarchy-box" id="note-hierarchy-box">
+      <div style="font-size:0.84rem; font-weight:700;">🧭 步驟一：確認或新增星系階層（輸入第 1 層後，第 2~4 層會自動即時解鎖）</div>
+      <div class="hierarchy-grid">
+        <div class="level-card">
+          <label>第 1 層：主科目 *</label>
+          <select id="n-sel-l1" onchange="onSelectLevel('n', 1)"></select>
+          <input type="text" id="n-new-l1" class="new-level-input" placeholder="輸入新主科目（如：自然）..." oninput="onNewInput('n', 1)" />
+        </div>
+        <div class="level-card">
+          <label>第 2 層：子科目 / 冊別（選填）</label>
+          <select id="n-sel-l2" onchange="onSelectLevel('n', 2)"></select>
+          <input type="text" id="n-new-l2" class="new-level-input" placeholder="輸入新子科目（如：生物）..." oninput="onNewInput('n', 2)" />
+        </div>
+        <div class="level-card">
+          <label>第 3 層：章節（選填）</label>
+          <select id="n-sel-l3" onchange="onSelectLevel('n', 3)"></select>
+          <input type="text" id="n-new-l3" class="new-level-input" placeholder="輸入新章節..." oninput="onNewInput('n', 3)" />
+        </div>
+        <div class="level-card">
+          <label>第 4 層：小節單元（選填）</label>
+          <select id="n-sel-l4" onchange="onSelectLevel('n', 4)"></select>
+          <input type="text" id="n-new-l4" class="new-level-input" placeholder="輸入新小節..." oninput="onNewInput('n', 4)" />
         </div>
       </div>
+      <div class="path-preview" id="n-path-preview">📍 目標星系座標：尚未完整選擇</div>
+    </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
-        <!-- 左側：題目與照片輸入 (6欄) -->
-        <div class="lg:col-span-6 space-y-3.5">
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">所屬科目</label>
-              <select id="mSubject" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-semibold">
-                <option value="geo">🌍 地理科</option>
-                <option value="his">📜 歷史科</option>
-                <option value="civ">⚖️ 公民科</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">考卷來源（選填）</label>
-              <input id="mExamSource" type="text" placeholder="例：115上 第一次段考 / 講義習題"
-                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500" />
-            </div>
-          </div>
-
-          <!-- 錯題照片上傳 -->
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">📸 上傳錯題照片／截圖（選填，支援 AI 看圖辨識）</label>
-            <label for="mistakeImgInput" class="border-2 border-dashed border-slate-700 hover:border-rose-400 bg-slate-950/60 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition">
-              <span class="text-lg">🖼️</span>
-              <span class="text-xs font-bold text-rose-300">點擊上傳考卷錯題截圖 (JPG / PNG)</span>
-              <input id="mistakeImgInput" type="file" accept="image/*" onchange="handleMistakeImgUpload(event)" class="hidden" />
-            </label>
-            <div id="mistakeImgPreviewWrap" class="hidden mt-2 relative">
-              <img id="mistakeImgPreview" class="max-h-36 rounded-xl border border-slate-700 mx-auto" alt="錯題截圖" />
-              <button onclick="clearMistakeImg()" class="mt-1 text-xs text-rose-400 hover:underline block mx-auto">移除圖片</button>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">題目敘述</label>
-            <textarea id="mQuestionText" rows="3" placeholder="輸入題目文字（若已上傳清晰題目照片，可按下方 AI 自動辨識）..."
-              class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm text-white placeholder-slate-500"></textarea>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <input id="mOptA" type="text" placeholder="(A) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-            <input id="mOptB" type="text" placeholder="(B) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-            <input id="mOptC" type="text" placeholder="(C) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-            <input id="mOptD" type="text" placeholder="(D) 選項內容" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white" />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-rose-300 mb-1">❌ 當時誤選答案</label>
-              <select id="mWrongChoice" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-sm text-rose-300 font-bold">
-                <option value="A">(A)</option>
-                <option value="B">(B)</option>
-                <option value="C">(C)</option>
-                <option value="D">(D)</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-emerald-300 mb-1">✅ 正確解答</label>
-              <select id="mCorrectChoice" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-sm text-emerald-300 font-bold">
-                <option value="A">(A)</option>
-                <option value="B">(B)</option>
-                <option value="C">(C)</option>
-                <option value="D">(D)</option>
-              </select>
-            </div>
-          </div>
-
-          <button id="btnAnalyzeMistake" onclick="analyzeMistakeWithAI()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-black text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition">
-            <span>🤖</span>
-            <span>AI 自動識別題目、章節出處與詳細解析</span>
-          </button>
+    <div class="ai-box">
+      <div style="font-size:0.86rem; font-weight:700; color:#e9d5ff; margin-bottom:8px;">✨ 步驟二：投入原始學習素材（逐字稿將自動歸檔至雲端硬碟 .txt 並萃煉為統一比較表）</div>
+      <div class="two-col">
+        <div class="form-group">
+          <label>📸 上傳手寫板書照片 / 講義圖片 (JPG/PNG)</label>
+          <input type="file" id="note-img-input" accept="image/*" onchange="previewUploadedImage(event, 'note-img-preview', 'noteImgData')" />
+          <img id="note-img-preview" style="max-height:90px; border-radius:6px; margin-top:6px; display:none;" />
         </div>
-
-        <!-- 右側：章節出處與詳解編輯區 (6欄) -->
-        <div class="lg:col-span-6 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-rose-300 uppercase tracking-wider">📚 章節出處與詳解檔案</span>
-              <span id="mistakeAiStatus" class="text-[11px] text-slate-400">可手動填寫或按 AI 解析</span>
-            </div>
-
-            <div>
-              <label class="text-[11px] text-amber-300 font-bold">📖 課本章節出處（冊別 / 章節 / 重點）</label>
-              <input id="mChapterRef" type="text" placeholder="例：國中地理 第一冊 第2章 臺灣的地形與海岸（重點2-3）"
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-amber-200 font-semibold mt-0.5" />
-            </div>
-
-            <div>
-              <label class="text-[11px] text-cyan-300 font-bold">🏷️ 核心考點標籤</label>
-              <input id="mConceptTag" type="text" placeholder="例：四種海岸類型比較、斷層海岸特徵"
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-cyan-200 mt-0.5" />
-            </div>
-
-            <div>
-              <label class="text-[11px] text-emerald-300 font-bold">🧠 詳細解析與觀念釐清（點選解答時顯示）</label>
-              <textarea id="mExplanation" rows="8" placeholder="詳細說明為何正確答案是該選項，以及當時誤選的陷阱原因..."
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 mt-0.5 leading-relaxed"></textarea>
-            </div>
-          </div>
-
-          <button onclick="saveNewMistake()" class="mt-4 w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-sm shadow transition">
-            ⚔️ 收入錯題修煉題庫
-          </button>
+        <div class="form-group">
+          <label>🎬 YouTube 教學網址 / PDF 連結</label>
+          <input type="url" id="note-yt-url" placeholder="https://youtu.be/..." />
+          <textarea id="note-raw-text" rows="2" style="margin-top:6px;" placeholder="貼上影片逐字稿、Gemini 摘要或講義文字（自動存為雲端 .txt）..."></textarea>
         </div>
+      </div>
+      <button class="btn-ai" style="width:100%; justify-content:center;" id="ai-synth-note-btn" onclick="runAiNoteSynthesis()">
+        🪄 呼叫 AI 自動萃煉為統一風格筆記與比較表格
+      </button>
+      <div id="note-ai-route-badge" class="route-badge-box"></div>
+    </div>
+
+    <div class="two-col">
+      <div class="form-group">
+        <label>筆記核心標題 *</label>
+        <input type="text" id="note-title" placeholder="AI 生成後自動填入，亦可微調" />
+      </div>
+      <div class="form-group">
+        <label>關聯互動網頁模組（選填）</label>
+        <select id="note-interactive-link">
+          <option value="">（無關聯互動網頁）</option>
+          <option value="geo/taiwan-terrain.html">🗺️ 臺灣 3D 螢光地形與等高線互動地圖</option>
+          <option value="his/prehistoric.html">🏺 臺灣史前文化互動時間軸</option>
+        </select>
       </div>
     </div>
+
+    <div class="form-group">
+      <label>結構化重點條列（每行一點） *</label>
+      <textarea id="note-points" rows="3" placeholder="AI 自動整理或手動輸入..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>AI 生成比較表格預覽（JSON 格式，可自動渲染為對照表）</label>
+      <textarea id="note-table-json" rows="2" placeholder='例如：{"headers":["類型","特徵","代表地區"],"rows":[["岩岸","港灣多","基隆港"],["沙岸","平直多沙洲","西南部海岸"]]}'></textarea>
+    </div>
+    <div class="form-group">
+      <label>記憶口訣</label>
+      <input type="text" id="note-mnemonic" placeholder="例如：東岸平直少灣澳，西岸沙洲養蚵蝦" />
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn-ghost" onclick="closeNoteModal()">取消</button>
+      <button class="btn-primary" id="save-note-btn" onclick="saveNewNote()">💾 確認儲存並滋養星球</button>
+    </div>
   </div>
+</div>
 
-  <!-- ==================== 彈窗 4：備份與還原學習紀錄 ==================== -->
-  <div id="backupModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative animate-fade-in">
-      <button onclick="closeModal('backupModal')" class="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">✕</button>
-      <h3 class="text-lg font-black text-white flex items-center gap-2">
-        <span>💾</span> 學習紀錄備份與跨裝置還原
-      </h3>
-      <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-        詹姆士的所有自建筆記與錯題庫都會自動儲存在瀏覽器中。若要換電腦或手機複習，可隨時匯出 JSON 備份檔！
-      </p>
+<!-- Modal 2: Create or Edit Mistake -->
+<div class="modal-backdrop" id="mistake-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="mistake-modal-heading">⚔️ AI 錯題淨化室（自動清除作答筆跡 ＋ 盲點校正）</h3>
+      <button class="btn-ghost" onclick="closeMistakeModal()">✕</button>
+    </div>
 
-      <div class="mt-4 space-y-3">
-        <button onclick="exportAllData()" class="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm transition">
-          ⬇️ 匯出全部筆記與錯題庫 (.json)
-        </button>
+    <div class="hierarchy-box" id="mistake-hierarchy-box">
+      <div style="font-size:0.84rem; font-weight:700;">🧭 步驟一：標註錯題所屬章節出處（至少選擇或新增第 1 層）</div>
+      <div class="hierarchy-grid">
+        <div class="level-card"><label>第 1 層：主科目 *</label><select id="m-sel-l1" onchange="onSelectLevel('m', 1)"></select><input type="text" id="m-new-l1" class="new-level-input" placeholder="新主科目..." oninput="onNewInput('m', 1)" /></div>
+        <div class="level-card"><label>第 2 層：子科目 / 冊別（選填）</label><select id="m-sel-l2" onchange="onSelectLevel('m', 2)"></select><input type="text" id="m-new-l2" class="new-level-input" placeholder="新子科目..." oninput="onNewInput('m', 2)" /></div>
+        <div class="level-card"><label>第 3 層：章節（選填）</label><select id="m-sel-l3" onchange="onSelectLevel('m', 3)"></select><input type="text" id="m-new-l3" class="new-level-input" placeholder="新章節..." oninput="onNewInput('m', 3)" /></div>
+        <div class="level-card"><label>第 4 層：小節單元（選填）</label><select id="m-sel-l4" onchange="onSelectLevel('m', 4)"></select><input type="text" id="m-new-l4" class="new-level-input" placeholder="新小節..." oninput="onNewInput('m', 4)" /></div>
+      </div>
+      <div class="path-preview" id="m-path-preview">📍 錯題歸檔座標：尚未完整選擇</div>
+    </div>
 
-        <label class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition">
-          <span>⬆️ 匯入備份檔還原資料</span>
-          <input type="file" accept=".json" onchange="importAllData(event)" class="hidden" />
+    <div class="ai-box">
+      <div style="font-size:0.86rem; font-weight:700; color:#e9d5ff; margin-bottom:8px;">🧹 步驟二：上傳寫滿紅筆／鉛筆痕跡的考卷照片，AI 自動擦除筆跡還原空白題目</div>
+      <input type="file" id="mistake-img-input" accept="image/*" onchange="previewUploadedImage(event, 'mistake-img-preview', 'mistakeImgData')" />
+      <img id="mistake-img-preview" style="max-height:110px; border-radius:6px; margin-top:8px; display:none;" />
+      <button class="btn-ai" style="width:100%; justify-content:center; margin-top:8px;" id="ai-clean-mistake-btn" onclick="runAiMistakeClean()">
+        🪄 執行 AI 筆跡擦除還原 ＋ 自動解析觀念盲點
+      </button>
+      <div id="mistake-ai-route-badge" class="route-badge-box"></div>
+    </div>
+
+    <div class="form-group">
+      <label>還原後的無筆跡純淨題幹 * <span class="badge-clean">已自動過濾手寫劃記</span></label>
+      <textarea id="m-question" rows="2" placeholder="AI 辨識還原或手動輸入題目..."></textarea>
+    </div>
+    <div class="two-col">
+      <div class="form-group"><label>選項 (A) *</label><input type="text" id="m-opt-0" /></div>
+      <div class="form-group"><label>選項 (B) *</label><input type="text" id="m-opt-1" /></div>
+      <div class="form-group"><label>選項 (C) *</label><input type="text" id="m-opt-2" /></div>
+      <div class="form-group"><label>選項 (D) *</label><input type="text" id="m-opt-3" /></div>
+    </div>
+    <div class="two-col">
+      <div class="form-group">
+        <label>正確答案 *</label>
+        <select id="m-answer"><option value="0">(A)</option><option value="1">(B)</option><option value="2">(C)</option><option value="3">(D)</option></select>
+      </div>
+      <div class="form-group">
+        <label>考卷出處備註</label>
+        <input type="text" id="m-source-note" placeholder="例如：115上第一次段考" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>AI 盲點校正與詳細解析 *</label>
+      <textarea id="m-explanation" rows="3" placeholder="說明正確觀念與各選項錯誤原因..."></textarea>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn-ghost" onclick="closeMistakeModal()">取消</button>
+      <button class="btn-red" id="save-mistake-btn" onclick="saveNewMistake()">⚔️ 收入無筆跡錯題本</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quiz Modal -->
+<div class="modal-backdrop" id="quiz-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🎯 雙軌綜合實戰出題引擎</h3>
+      <button class="btn-ghost" onclick="closeQuizModal()">✕</button>
+    </div>
+
+    <div id="quiz-setup-panel" class="ai-box">
+      <div style="font-size:0.86rem; font-weight:700; margin-bottom:8px;">選擇本次測驗的題庫來源與組合方式：</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" id="src-mistakes" checked style="width:auto;" /> ⚔️ 納入歷史錯題重做（無筆跡還原版）
         </label>
-
-        <button onclick="resetToDefaults()" class="w-full py-2 rounded-xl text-xs text-rose-400 hover:bg-rose-950/40 transition">
-          重設為預設範例資料庫
-        </button>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" id="src-ai-gen" checked style="width:auto;" /> 🤖 AI 依據所選星球筆記即時生成新變形題
+        </label>
       </div>
+      <button class="btn-ai" style="width:100%; justify-content:center;" onclick="generateAndStartQuiz()">🚀 立即組卷並開始測驗</button>
+    </div>
+
+    <div id="quiz-body"></div>
+    <div id="quiz-footer" style="display:none; justify-content:space-between; align-items:center; margin-top:16px;">
+      <span id="quiz-score-text" style="font-weight:700; color:var(--accent-gold);"></span>
+      <button class="btn-primary" id="submit-quiz-btn" onclick="submitQuiz()">✅ 交卷並更新星球光暈</button>
     </div>
   </div>
+</div>
 
-  <!-- 輕量提示 Toast -->
-  <div id="toastBox" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-cyan-400/60 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
-    <span id="toastIcon">✨</span>
-    <span id="toastMsg">操作成功！</span>
-  </div>
+<script>
+  const DEFAULT_DATA = [
+    {
+      path: "社會/地理/第二章：臺灣的地形/2-1 五大地形與山脈",
+      notes: [
+        {
+          title: "內營力與外營力、五大山脈全解析",
+          points: [
+            "內營力增加地形起伏（板塊、造山、火山、斷層、褶曲）；外營力夷平地表（風化、侵蝕、堆積、崩壞）。",
+            "山地相對高度 ≥ 1000m：雪山山脈（國五雪隧）、中央山脈（北起蘇澳南至鵝鑾鼻）、海岸山脈（較年輕）、玉山山脈（布農族）、阿里山山脈（較古老、鄒族）。"
+          ],
+          table: {
+            headers: ["山脈名稱", "位置與走向", "地質年代與人文特色"],
+            rows: [
+              ["雪山山脈", "西北側，東北—西南走向", "國道五號雪山隧道貫穿"],
+              ["中央山脈", "北起蘇澳、南至鵝鑾鼻", "臺灣屋脊，貫穿全島南北"],
+              ["海岸山脈", "花東縱谷東側", "板塊擠壓最前線，地質較年輕"],
+              ["玉山山脈", "中央山脈西側", "八通關古道、布農族分布"],
+              ["阿里山山脈", "玉山山脈西側", "地質年代較古老、鄒族分布"]
+            ]
+          },
+          mnemonic: "內營力長痘痘，外營力擠痘痘；中央山脈貫南北，海岸年輕阿里老。",
+          youtubeUrl: "https://youtu.be/sp1YGayFTDs",
+          interactiveLink: "geo/taiwan-terrain.html",
+          transcriptFileUrl: "",
+          imageData: ""
+        }
+      ],
+      questions: [
+        {
+          q: "國道五號雪山隧道貫穿臺灣哪一座山脈，大幅縮短臺北與宜蘭的交通時間？",
+          opts: ["(A) 中央山脈", "(B) 雪山山脈", "(C) 海岸山脈", "(D) 阿里山山脈"],
+          ans: 1,
+          exp: "雪山山脈呈東北—西南走向，國道五號雪山隧道貫穿其中。",
+          sourceNote: "國一上地理講義（已清除原紅筆作答痕跡）"
+        }
+      ],
+      stats: { correct: 4, wrong: 1 }
+    },
+    {
+      path: "社會/地理/第二章：臺灣的地形/2-3 四種海岸與周邊離島",
+      notes: [
+        {
+          title: "四種海岸類型與三大成因離島對照",
+          points: [
+            "北部山地灣澳（岩岸，基隆/蘇澳港）；東部斷層海岸（平直少灣澳，花蓮港）；南部珊瑚礁海岸；西部沙洲潟湖（沙岸，養殖業）。"
+          ],
+          table: {
+            headers: ["離島成因", "代表島嶼", "地質與人文關鍵字"],
+            rows: [
+              ["大陸島", "金門、馬祖", "花崗岩、戰地文化、最北北竿島"],
+              ["火山島", "澎湖、釣魚臺、龜山島、綠島、蘭嶼", "澎湖玄武岩平臺、綠島海底溫泉、蘭嶼達悟族"],
+              ["珊瑚礁島", "琉球嶼、東沙島、太平島、南方四島", "珊瑚礁石灰岩構成"]
+            ]
+          },
+          mnemonic: "東岸平直少灣澳，西岸沙洲養蚵蝦；金馬大陸花崗岩，綠蘭澎龜釣火山。",
+          youtubeUrl: "",
+          interactiveLink: "geo/taiwan-terrain.html",
+          transcriptFileUrl: "",
+          imageData: ""
+        }
+      ],
+      questions: [
+        {
+          q: "下列哪一組離島全部分屬於「火山島」地質成因？",
+          opts: ["(A) 金門、馬祖、小琉球", "(B) 澎湖、綠島、蘭嶼", "(C) 太平島、東沙島、龜山島", "(D) 釣魚臺、馬祖、南方四島"],
+          ans: 1,
+          exp: "澎湖（玄武岩）、釣魚臺、龜山島、綠島、蘭嶼皆為火山島；金馬為大陸島；小琉球、東沙、太平島為珊瑚礁島。",
+          sourceNote: "段考易錯題（AI 淨化還原）"
+        }
+      ],
+      stats: { correct: 2, wrong: 3 }
+    }
+  ];
 
-  <script>
-    // ==================== 預設資料庫 (包含國一地理 3D 地形圖與三科範例) ====================
-    const DEFAULT_NOTES = [
-      {
-        id: 'note-geo-terrain',
-        subject: 'geo',
-        chapter: '國一上 地理｜第2章 臺灣的地形與海岸',
-        title: '臺灣五大地形、四種海岸與離島地質全攻略',
-        core: '受板塊擠壓（內營力）與河川海浪（外營力）交互作用，塑造臺灣山高水急、地形多樣的特色。',
-        interactiveUrl: 'geo/taiwan-terrain.html',
-        interactiveLabel: '進入 3D 螢光地形互動地圖 →',
-        points: [
-          '【五大山脈 ≥1000m】雪山（國五雪隧）、中央（蘇澳至鵝鑾鼻）、海岸（地質年輕）、玉山（八通關古道/布農族）、阿里山（地質古老/鄒族）。',
-          '【三縣市丘陵 <1000m】桃園、新竹、苗栗丘陵，客家人開闢梯田種茶樹與果樹。',
-          '【六大臺地】頂平邊陡（<1000m）：林口、桃園（多埤塘灌溉）、大肚、八卦、恆春半島、澎湖（玄武岩平臺狀）。',
-          '【四大盆地】中間低四周高：臺北、臺中、埔里（南投）、泰源（臺東）。',
-          '【六大平原】蘭陽、花東縱谷、屏東、嘉南（最大/西拉雅族）、雲林（蔬果）、彰化（花卉）。',
-          '【離島地質】大陸島（金門花崗岩、馬祖連江縣）；火山島（澎湖、釣魚臺、龜山島、綠島海底溫泉、蘭嶼達悟族）；珊瑚礁島（小琉球、東沙、太平島、澎湖南方四島）。'
-        ],
-        mnemonic: '內營力長痘痘，外營力擠痘痘；盆地中間低，臺地頂部平；東岸平直少灣澳，西岸沙洲養蚵蝦。',
-        hotspot: '海岸山脈(年輕) vs 阿里山山脈(古老)；彰化(花卉) vs 雲林(蔬果)；離島三大成因分類。',
-        sourceType: '補習班板書 + 3D 互動系統',
-        createdAt: '2026-11-16'
-      },
-      {
-        id: 'note-his-discovery',
-        subject: 'his',
-        chapter: '國一上 歷史｜第2章 大航海時代與荷西治臺',
-        title: '大航海時代的臺灣：荷蘭、西班牙與鄭氏時期比較',
-        core: '17 世紀臺灣因位居東亞航線樞紐，成為歐洲海權國家與漢人海商競逐的轉口貿易基地。',
-        points: [
-          '【荷蘭統治南部（1624–1662）】以大員（臺南安平）為中心，建熱蘭遮城、普羅民遮城；引進漢人開墾種植稻米與甘蔗，並創製「新港文」教導西拉雅族。',
-          '【西班牙統治北部（1626–1642）】佔領雞籠（基隆，建聖薩爾瓦多城）與滬尾（淡水，建聖多明哥城），為對抗荷蘭並與中國、日本貿易。',
-          '【郭懷一事件（1652）】因荷蘭課徵重稅（人頭稅、狩獵稅）引發漢人起事抗暴，最終遭荷蘭聯合原住民鎮壓。',
-          '【鄭氏時期（1662–1683）】鄭成功驅逐荷蘭人；陳永華推行「寓兵於農」（軍屯）解決糧食問題，並興建全臺首學（臺南孔廟）。'
-        ],
-        mnemonic: '荷南西北爭大員，新港文書傳西拉雅；鄭氏軍屯解糧荒，永華建廟興文教。',
-        hotspot: '熱蘭遮城 vs 普羅民遮城功能區分；郭懷一事件背景；軍屯制度目的。',
-        sourceType: '歷史重點架構模板',
-        createdAt: '2026-11-15'
-      },
-      {
-        id: 'note-civ-family',
-        subject: 'civ',
-        chapter: '國一上 公民｜第2章 家庭型態與性別平權',
-        title: '現代家庭型態變遷與親屬關係判讀',
-        core: '隨著工業化與都市化發展，臺灣家庭規模趨於小型化，家庭功能也逐步由社會福利制度分擔。',
-        points: [
-          '【核心家庭（小家庭）】由一對夫妻及其未婚子女組成，親子關係單純、決策快，但育兒與長照人力較吃緊。',
-          '【折衷家庭（三代同堂）】父母、一對已婚子女及其孫子女組成，兼具親情照顧與世代互助優勢。',
-          '【擴展家庭（大家庭）】兩對以上已婚兄弟姊妹與父母同住，常見於傳統農業社會。',
-          '【多元家庭型態】單親家庭、重組家庭（繼親家庭）、隔代教養家庭、頂客族（雙薪無子女）、跨國婚姻家庭。',
-          '【親屬關係分類】配偶（婚姻關係）、血親（自然血親如父母子女；法定血親如收養）、姻親（血親之配偶、配偶之血親、配偶之血親之配偶）。'
-        ],
-        mnemonic: '核心小家庭、折衷三代堂、擴展兄弟聚；收養算血親，連襟妯娌是姻親。',
-        hotspot: '姻親範圍判斷（親家公母不是姻親！）；高齡化社會下的家庭功能轉變。',
-        sourceType: '公民核心概念卡',
-        createdAt: '2026-11-14'
-      }
-    ];
+  let db = [];
+  try {
+    const saved = JSON.parse(localStorage.getItem("james_galaxy_db_v6"));
+    db = (Array.isArray(saved) && saved.length > 0) ? saved : JSON.parse(JSON.stringify(DEFAULT_DATA));
+  } catch (e) {
+    db = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
 
-    const DEFAULT_MISTAKES = [
-      {
-        id: 'mis-01',
-        subject: 'geo',
-        examSource: '國一地理 隨堂練習卷',
-        question: '臺灣四面環海，各地海岸景觀大不相同。請問東部海岸因為受到板塊擠壓與斷層作用影響，呈現何種地形特徵，導致 1930 年代必須以人工方式修建花蓮港？',
-        options: {
-          A: '海岸線曲折多岬角與海灣，水深港闊',
-          B: '海岸線過於平直，缺乏天然灣澳避風',
-          C: '河川泥沙堆積旺盛，離岸沙洲與潟湖遍布',
-          D: '珊瑚礁裙礁發達，海水淺且暗礁多'
-        },
-        wrongChoice: 'A',
-        correctChoice: 'B',
-        chapterRef: '國中地理 第一冊 第2章 臺灣的地形與海岸（重點 2-4 四種海岸類型）',
-        conceptTag: '東部斷層海岸 vs 北部灣澳海岸',
-        explanation: '正確答案為 (B)。臺灣四種海岸口訣：「東岸平直少灣澳，西岸沙洲養蚵蝦」。\n• (A) 海岸線曲折多岬角灣澳的是「北部山地灣澳海岸」（如基隆港、蘇澳港），並非東部。\n• (B) 正確！東部為「斷層海岸」（岩岸），峭壁緊鄰深海，海岸線過於平直缺乏天然灣澳，故需人工築堤修建花蓮港。\n• (C) 沙洲與潟湖遍布是「西部沙岸」。\n• (D) 珊瑚礁海岸主要分布於「南部恆春半島」。',
-        mastered: false,
-        createdAt: '2026-11-16'
-      },
-      {
-        id: 'mis-02',
-        subject: 'geo',
-        examSource: '國一地理 離島地質小考',
-        question: '下列關於臺灣周邊離島的地理位置與地質成因配對，何者完全正確？',
-        options: {
-          A: '金門列島 — 火山島 — 柱狀玄武岩發達',
-          B: '龜山島 — 珊瑚礁島 — 位於高雄西南方外海',
-          C: '馬祖列島 — 大陸島 — 位於臺北市西北方，屬連江縣',
-          D: '太平島 — 火山島 — 位於臺灣東北方，擁有海底溫泉'
-        },
-        wrongChoice: 'D',
-        correctChoice: 'C',
-        chapterRef: '國中地理 第一冊 第1章～第2章 臺灣的位置與周邊離島地質',
-        conceptTag: '大陸島、火山島、珊瑚礁島方位與成因',
-        explanation: '正確答案為 (C)。\n• (A) 金門是「大陸島」，岩石以堅硬的「花崗岩」為主（柱狀玄武岩是澎湖）。\n• (B) 龜山島是「火山島」，位於「宜蘭縣」頭城外海。\n• (C) 正確！馬祖屬連江縣，位於臺北市的西北方、閩江口外，與金門同屬大陸島。\n• (D) 太平島是位於南海的「珊瑚礁島」（我國領土最南端）；位於臺灣東北方的火山島是釣魚臺列嶼，擁有海底溫泉的火山島則是臺東外海的綠島。',
-        mastered: false,
-        createdAt: '2026-11-16'
-      },
-      {
-        id: 'mis-03',
-        subject: 'his',
-        examSource: '國一歷史 段考模擬題',
-        question: '17 世紀荷蘭聯合東印度公司統治臺灣南部期間，為了向原住民族傳教並簽訂土地契約，傳教士利用羅馬字母拼寫原住民語言。請問這種文字被稱為什麼？主要通行於哪一族群？',
-        options: {
-          A: '漢字；凱達格蘭族',
-          B: '新港文；西拉雅族',
-          C: '八思巴文；布農族',
-          D: '拼音文字；達悟族'
-        },
-        wrongChoice: 'A',
-        correctChoice: 'B',
-        chapterRef: '國中歷史 第一冊 第2章 大航海時代的臺灣（重點 2-2 荷蘭的統治與教化）',
-        conceptTag: '新港文書與西拉雅族',
-        explanation: '正確答案為 (B)。荷蘭傳教士（如干治士、尤羅伯）在臺南新港社一帶以羅馬字母拼寫平埔族群「西拉雅族」的語言，稱為「新港文」（留存契約稱新港文書或番仔契），甚至沿用到清領時期。',
-        mastered: true,
-        createdAt: '2026-11-14'
-      }
-    ];
+  let gasUrl = localStorage.getItem("james_gas_url") || "";
+  let currentPath = [];
+  let selectedPaths = new Set();
+  let activeQuiz = [];
+  let userAnswers = {};
+  let currentDrawerNode = null;
+  let currentDrawerTab = "notes";
+  let uploadedBuffers = { noteImgData: "", mistakeImgData: "", latestTranscriptUrl: "" };
 
-    // ==================== 狀態與 LocalStorage 讀取 ====================
-    let notesData = JSON.parse(localStorage.getItem('james_social_notes_v1')) || DEFAULT_NOTES;
-    let mistakesData = JSON.parse(localStorage.getItem('james_social_mistakes_v1')) || DEFAULT_MISTAKES;
-    let activeMainTab = 'all'; // 'all' | 'geo' | 'his' | 'civ' | 'mistakes'
-    let uploadedNoteFileObj = null; // { name, type, base64, textContent }
-    let uploadedMistakeImgBase64 = null;
+  let editingNoteTarget = null;
+  let editingMistakeTarget = null;
 
-    function persistData() {
-      localStorage.setItem('james_social_notes_v1', JSON.stringify(notesData));
-      localStorage.setItem('james_social_mistakes_v1', JSON.stringify(mistakesData));
-      updateDashboardStats();
+  /* =========================================================
+     Resizable Split Pane Logic (Draggable Divider + Presets)
+     ========================================================= */
+  const detailPanelEl = document.getElementById("detail-panel");
+  const resizerEl = document.getElementById("panel-resizer");
+  const workspaceEl = document.getElementById("workspace");
+  let savedPanelPercent = parseFloat(localStorage.getItem("james_panel_ratio")) || 52;
+  let isResizing = false;
+
+  function applyPanelRatio(percent) {
+    const clamped = Math.max(28, Math.min(82, percent));
+    savedPanelPercent = clamped;
+    detailPanelEl.style.width = clamped + "%";
+    localStorage.setItem("james_panel_ratio", clamped.toFixed(1));
+
+    [35, 52, 72].forEach(p => {
+      const btn = document.getElementById(`ratio-${p}`);
+      if (btn) btn.classList.toggle("active", Math.abs(clamped - p) < 4);
+    });
+
+    if (typeof resizeStarCanvas === "function") resizeStarCanvas();
+    renderGalaxy();
+  }
+
+  function setPanelRatio(percent) {
+    applyPanelRatio(percent);
+  }
+
+  resizerEl.addEventListener("pointerdown", (e) => {
+    isResizing = true;
+    resizerEl.classList.add("dragging");
+    resizerEl.setPointerCapture(e.pointerId);
+    document.body.style.cursor = "col-resize";
+  });
+
+  window.addEventListener("pointermove", (e) => {
+    if (!isResizing) return;
+    const rect = workspaceEl.getBoundingClientRect();
+    const rightWidth = rect.right - e.clientX;
+    const percent = (rightWidth / rect.width) * 100;
+    applyPanelRatio(percent);
+  });
+
+  window.addEventListener("pointerup", (e) => {
+    if (!isResizing) return;
+    isResizing = false;
+    resizerEl.classList.remove("dragging");
+    document.body.style.cursor = "";
+  });
+
+  /* =========================================================
+     AI Route Status Badge + Transcript Drive Archive Link
+     ========================================================= */
+  function showAiRouteBadge(badgeId, usedModel, isPaid, transcriptFileUrl = "") {
+    const el = document.getElementById(badgeId);
+    if (!el) return;
+    el.style.display = "flex";
+
+    let routeHtml = "";
+    if (isPaid) {
+      routeHtml = `<span style="display:inline-block; background:rgba(251,191,36,0.2); color:#fde68a; border:1px solid rgba(251,191,36,0.55); padding:4px 11px; border-radius:6px; font-weight:600;">👑 已自動切換至【${usedModel}】完成任務</span>`;
+    } else {
+      routeHtml = `<span style="display:inline-block; background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(16,185,129,0.55); padding:4px 11px; border-radius:6px; font-weight:600;">🌱 本次透過【${usedModel}】免費完成</span>`;
     }
 
-    // ==================== 初始化 ====================
-    window.onload = function () {
-      const now = new Date();
-      document.getElementById('todayDateLabel').textContent = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()} 修煉日誌`;
-      updateDashboardStats();
-      renderCurrentView();
-    };
+    let driveLinkHtml = "";
+    if (transcriptFileUrl) {
+      driveLinkHtml = `<a class="transcript-archive-link" href="${transcriptFileUrl}" target="_blank" title="點擊前往 Google 雲端硬碟檢視原始逐字稿 .txt 檔案">📄 已自動存檔至雲端硬碟逐字稿庫 ↗</a>`;
+    }
 
-    // ==================== 科目樣式輔助函式 ====================
-    function getSubjectMeta(subj) {
-      if (subj === 'geo') {
-        return {
-          name: '地理',
-          icon: '🌍',
-          badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-          cardBorder: 'card-geo border-slate-800',
-          accentText: 'text-emerald-300',
-          btnBg: 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-500/40'
-        };
+    el.innerHTML = routeHtml + driveLinkHtml;
+  }
+
+  function hideAiRouteBadge(badgeId) {
+    const el = document.getElementById(badgeId);
+    if (el) {
+      el.style.display = "none";
+      el.innerHTML = "";
+    }
+  }
+
+  function updateCloudStatusBtn(customText = null) {
+    const btn = document.getElementById("cloud-status-btn");
+    if (customText) {
+      btn.textContent = customText;
+      return;
+    }
+    btn.textContent = gasUrl ? "🟢 AI 雲端已連線" : "⚙️ AI 雲端設定";
+  }
+  updateCloudStatusBtn();
+
+  function openConfigModal() {
+    document.getElementById("gas-url-input").value = gasUrl;
+    document.getElementById("config-modal").classList.add("open");
+  }
+  function closeConfigModal() { document.getElementById("config-modal").classList.remove("open"); }
+  async function saveGasUrl() {
+    gasUrl = document.getElementById("gas-url-input").value.trim();
+    localStorage.setItem("james_gas_url", gasUrl);
+    updateCloudStatusBtn();
+    closeConfigModal();
+    if (gasUrl) {
+      await saveDB(true);
+      alert("✅ 已綁定 Google Apps Script 並完成首次試算表同步！");
+    } else {
+      alert("已切換為本地智慧模擬模式。");
+    }
+  }
+
+  async function manualSyncNow() {
+    const urlInput = document.getElementById("gas-url-input").value.trim();
+    if (!urlInput) {
+      alert("請先貼上 Google Apps Script 的 /exec 網址！");
+      return;
+    }
+    gasUrl = urlInput;
+    localStorage.setItem("james_gas_url", gasUrl);
+    await saveDB(true);
+    alert("☁️ 已將目前所有星系筆記與錯題同步寫入 Google 試算表 (GalaxyDB)！");
+  }
+
+  async function saveDB(throwOnErr = false) {
+    try {
+      localStorage.setItem("james_galaxy_db_v6", JSON.stringify(db));
+    } catch (e) {}
+
+    if (gasUrl) {
+      updateCloudStatusBtn("🔄 雲端同步中...");
+      try {
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          redirect: "follow",
+          body: JSON.stringify({ action: "sync_db", db: db })
+        });
+        const json = await res.json();
+        if (json.status === "ok") {
+          updateCloudStatusBtn("🟢 AI 雲端已同步");
+        } else {
+          updateCloudStatusBtn("⚠️ 同步異常");
+          if (throwOnErr) alert("試算表同步回傳錯誤：" + json.message);
+        }
+      } catch (err) {
+        updateCloudStatusBtn("⚠️ 連線失敗");
+        if (throwOnErr) alert("同步連線失敗：" + err.message);
       }
-      if (subj === 'his') {
-        return {
-          name: '歷史',
-          icon: '📜',
-          badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-          cardBorder: 'card-his border-slate-800',
-          accentText: 'text-amber-300',
-          btnBg: 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border-amber-500/40'
-        };
+    }
+  }
+
+  async function loadFromCloud() {
+    if (!gasUrl) return;
+    updateCloudStatusBtn("🔄 讀取雲端中...");
+    try {
+      const res = await fetch(gasUrl, { method: "GET", redirect: "follow" });
+      const json = await res.json();
+      if (json.status === "ok" && Array.isArray(json.db) && json.db.length > 0) {
+        db = json.db;
+        localStorage.setItem("james_galaxy_db_v6", JSON.stringify(db));
+        renderGalaxy();
       }
-      return {
-        name: '公民',
-        icon: '⚖️',
-        badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-        cardBorder: 'card-civ border-slate-800',
-        accentText: 'text-purple-300',
-        btnBg: 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 border-purple-500/40'
+      updateCloudStatusBtn("🟢 AI 雲端已連線");
+    } catch (err) {
+      updateCloudStatusBtn("⚠️ 雲端離線");
+    }
+  }
+
+  /* Custom Cosmic Cursor */
+  let cursorMode = "emoji";
+  const stageEl = document.getElementById("galaxy-stage");
+  const cursorEl = document.getElementById("cosmic-cursor");
+  let lastX = 0;
+
+  stageEl.addEventListener("mousemove", (e) => {
+    if (cursorMode === "default") return;
+    cursorEl.style.display = "flex";
+    cursorEl.style.left = e.clientX + "px";
+    cursorEl.style.top = e.clientY + "px";
+    const tilt = Math.max(-25, Math.min(25, (e.clientX - lastX) * 1.5));
+    cursorEl.style.transform = `translate(-50%, -50%) rotate(${tilt}deg)`;
+    lastX = e.clientX;
+  });
+  stageEl.addEventListener("mouseleave", () => { cursorEl.style.display = "none"; });
+
+  function openCursorModal() { document.getElementById("cursor-modal").classList.add("open"); }
+  function closeCursorModal() { document.getElementById("cursor-modal").classList.remove("open"); }
+  function setCosmicCursor(mode, val) {
+    cursorMode = mode;
+    if (mode === "default") {
+      stageEl.classList.remove("custom-cursor-active");
+      cursorEl.style.display = "none";
+    } else if (mode === "emoji") {
+      stageEl.classList.add("custom-cursor-active");
+      cursorEl.innerHTML = `<span class="cursor-emoji">${val}</span>`;
+    } else if (mode === "image") {
+      stageEl.classList.add("custom-cursor-active");
+      cursorEl.innerHTML = `<img src="${val}" alt="cursor" />`;
+    }
+  }
+  function uploadCustomCursor(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => setCosmicCursor("image", e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  function previewUploadedImage(event, previewImgId, bufferKey) {
+    const file = event.target.files[0];
+    const imgEl = document.getElementById(previewImgId);
+    if (!file) { uploadedBuffers[bufferKey] = ""; imgEl.style.display = "none"; return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, 800 / tempImg.width);
+        canvas.width = tempImg.width * scale;
+        canvas.height = tempImg.height * scale;
+        canvas.getContext("2d").drawImage(tempImg, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL("image/jpeg", 0.78);
+        uploadedBuffers[bufferKey] = compressed;
+        imgEl.src = compressed;
+        imgEl.style.display = "inline-block";
       };
+      tempImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* Planet Management */
+  function renamePlanet(fullChildPath, oldName) {
+    const rawNew = prompt(`請輸入「${oldName}」的新星球名稱：`, oldName);
+    if (rawNew === null) return;
+    const newName = rawNew.trim().replace(/\//g, "-");
+    if (!newName || newName === oldName) return;
+
+    const parentPrefix = currentPath.length ? currentPath.join("/") + "/" : "";
+    const newFullPath = parentPrefix + newName;
+
+    db.forEach(item => {
+      if (item.path === fullChildPath) item.path = newFullPath;
+      else if (item.path.startsWith(fullChildPath + "/")) item.path = newFullPath + item.path.slice(fullChildPath.length);
+    });
+
+    const updatedSelected = new Set();
+    selectedPaths.forEach(p => {
+      if (p === fullChildPath) updatedSelected.add(newFullPath);
+      else if (p.startsWith(fullChildPath + "/")) updatedSelected.add(newFullPath + p.slice(fullChildPath.length));
+      else updatedSelected.add(p);
+    });
+    selectedPaths = updatedSelected;
+
+    saveDB();
+    updateQuizButton();
+    renderGalaxy();
+
+    if (currentDrawerNode && currentDrawerNode.fullPath === fullChildPath) {
+      currentDrawerNode.name = newName;
+      currentDrawerNode.fullPath = newFullPath;
+      document.getElementById("panel-title").textContent = `📘 ${newName}`;
+      document.getElementById("panel-stats").textContent =
+        `座標：${newFullPath} ｜ 答對 ${currentDrawerNode.correct} 次 / 錯題 ${currentDrawerNode.wrong} 次`;
+    }
+  }
+
+  function deletePlanet(fullChildPath, planetName) {
+    if (!confirm(`⚠️ 確定要刪除「${planetName}」星球嗎？\n（此操作將一併刪除該星球底下的所有子章節、筆記與錯題資料！）`)) return;
+
+    db = db.filter(item => item.path !== fullChildPath && !item.path.startsWith(fullChildPath + "/"));
+
+    const updatedSelected = new Set();
+    selectedPaths.forEach(p => {
+      if (p !== fullChildPath && !p.startsWith(fullChildPath + "/")) updatedSelected.add(p);
+    });
+    selectedPaths = updatedSelected;
+
+    if (currentDrawerNode && (currentDrawerNode.fullPath === fullChildPath || currentDrawerNode.fullPath.startsWith(fullChildPath + "/"))) {
+      closeDetailPanel();
     }
 
-    // ==================== 更新儀表板數據 ====================
-    function updateDashboardStats() {
-      const totalNotes = notesData.length;
-      const geoCount = notesData.filter(n => n.subject === 'geo').length;
-      const hisCount = notesData.filter(n => n.subject === 'his').length;
-      const civCount = notesData.filter(n => n.subject === 'civ').length;
+    saveDB();
+    updateQuizButton();
+    renderGalaxy();
+  }
 
-      const totalMistakes = mistakesData.length;
-      const masteredCount = mistakesData.filter(m => m.mastered).length;
-      const pendingCount = totalMistakes - masteredCount;
-      const masteryRate = totalMistakes === 0 ? 100 : Math.round((masteredCount / totalMistakes) * 100);
-
-      document.getElementById('statTotalNotes').textContent = totalNotes;
-      document.getElementById('statTotalMistakes').textContent = totalMistakes;
-      document.getElementById('statMasteredLabel').textContent = `已精熟 ${masteredCount} 題`;
-      document.getElementById('statMasteryRate').textContent = `${masteryRate}%`;
-      document.getElementById('heroPendingMistakes').textContent = pendingCount;
-      document.getElementById('navMistakeCount').textContent = pendingCount;
-
-      document.getElementById('subjectRatioText').textContent = `地理 ${geoCount}｜歷史 ${hisCount}｜公民 ${civCount}`;
-      const sum = Math.max(1, totalNotes);
-      document.getElementById('barGeo').style.width = `${(geoCount / sum) * 100}%`;
-      document.getElementById('barHis').style.width = `${(hisCount / sum) * 100}%`;
-      document.getElementById('barCiv').style.width = `${(civCount / sum) * 100}%`;
-    }
-
-    // ==================== 分頁切換 ====================
-    function switchMainTab(tab) {
-      activeMainTab = tab;
-      document.querySelectorAll('.nav-tab').forEach(btn => {
-        btn.classList.remove('ring-2', 'ring-white', 'scale-105');
-      });
-      const activeBtn = document.getElementById(`tab-${tab}`);
-      if (activeBtn) activeBtn.classList.add('ring-2', 'ring-white', 'scale-105');
-
-      renderCurrentView();
-    }
-
-    function renderCurrentView() {
-      const notesSec = document.getElementById('notesSection');
-      const mistakesSec = document.getElementById('mistakesSection');
-
-      if (activeMainTab === 'mistakes') {
-        notesSec.classList.add('hidden');
-        mistakesSec.classList.remove('hidden');
-        renderMistakes();
-      } else {
-        mistakesSec.classList.add('hidden');
-        notesSec.classList.remove('hidden');
-        renderNotes();
+  /* Galaxy Tree & Rendering */
+  function getChildrenNodes(prefixArr) {
+    const prefixStr = prefixArr.length ? prefixArr.join("/") + "/" : "";
+    const map = new Map();
+    db.forEach(item => {
+      if (!item.path || !item.path.startsWith(prefixStr)) return;
+      const rest = item.path.slice(prefixStr.length);
+      if (!rest) return;
+      const segments = rest.split("/");
+      const childName = segments[0];
+      const fullChildPath = prefixStr + childName;
+      const isLeaf = segments.length === 1;
+      if (!map.has(childName)) {
+        map.set(childName, { name: childName, fullPath: fullChildPath, isLeaf, noteCount: 0, questionCount: 0, correct: 0, wrong: 0, leafData: isLeaf ? item : null });
       }
+      const node = map.get(childName);
+      if (!isLeaf) node.isLeaf = false;
+      node.noteCount += (item.notes ? item.notes.length : 0);
+      node.questionCount += (item.questions ? item.questions.length : 0);
+      node.correct += (item.stats?.correct || 0);
+      node.wrong += (item.stats?.wrong || 0);
+    });
+    return Array.from(map.values());
+  }
+
+  function renderBreadcrumbs() {
+    const el = document.getElementById("breadcrumbs");
+    let html = `<span class="crumb ${currentPath.length === 0 ? 'active' : ''}" onclick="navigateTo([])">🌌 知識全宇宙</span>`;
+    currentPath.forEach((seg, idx) => {
+      const target = currentPath.slice(0, idx + 1);
+      const isLast = idx === currentPath.length - 1;
+      html += ` <span style="color:#475569;">/</span> <span class="crumb ${isLast ? 'active' : ''}" onclick='navigateTo(${JSON.stringify(target)})'>${seg}</span>`;
+    });
+    el.innerHTML = html;
+  }
+
+  function navigateTo(pathArr) {
+    currentPath = pathArr;
+    closeDetailPanel();
+    renderGalaxy();
+  }
+
+  function renderGalaxy() {
+    renderBreadcrumbs();
+    const container = document.getElementById("planets-container");
+    container.innerHTML = "";
+    const nodes = getChildrenNodes(currentPath);
+
+    const W = stageEl.clientWidth || window.innerWidth;
+    const H = stageEl.clientHeight || (window.innerHeight - 60);
+    const cx = W / 2, cy = H / 2 - 15;
+
+    if (nodes.length === 0) {
+      container.innerHTML = `<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; color:#94a3b8; padding:0 16px;">
+        <div style="font-size:2.5rem; margin-bottom:10px;">🌌</div>
+        <div>目前此星系尚無任何星球，點擊右上角「📘 AI 整理筆記/影音」來創造第一顆星球吧！</div>
+      </div>`;
+      return;
     }
 
-    // ==================== 渲染統一風格筆記卡片 ====================
-    function renderNotes() {
-      const grid = document.getElementById('notesGrid');
-      const searchKw = (document.getElementById('globalSearchInput')?.value || '').trim().toLowerCase();
-
-      const badgeNames = { all: '全部科目', geo: '🌍 地理秘笈', his: '📜 歷史編年', civ: '⚖️ 公民法典' };
-      document.getElementById('notesFilterBadge').textContent = badgeNames[activeMainTab] || '全部科目';
-
-      const filtered = notesData.filter(n => {
-        const matchSubj = activeMainTab === 'all' || n.subject === activeMainTab;
-        const matchKw = !searchKw ||
-          n.title.toLowerCase().includes(searchKw) ||
-          n.chapter.toLowerCase().includes(searchKw) ||
-          n.core.toLowerCase().includes(searchKw) ||
-          n.points.some(p => p.toLowerCase().includes(searchKw));
-        return matchSubj && matchKw;
-      });
-
-      if (filtered.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full bg-slate-900/70 border border-dashed border-slate-700 rounded-2xl p-10 text-center">
-            <div class="text-3xl mb-2">📭</div>
-            <div class="text-base font-bold text-slate-300">目前還沒有符合條件的秘笈筆記</div>
-            <p class="text-xs text-slate-500 mt-1">點擊上方「上傳整理筆記」，把講義 PDF、照片或網址一鍵轉成統一筆記卡！</p>
-          </div>
-        `;
-        return;
+    nodes.forEach((node, i) => {
+      const scaleFactor = W < 420 ? 0.78 : 1;
+      const size = Math.min(185, (108 + Math.sqrt(node.noteCount) * 24) * scaleFactor);
+      const total = nodes.length;
+      let x = cx, y = cy;
+      if (total > 1) {
+        const angle = (i / total) * Math.PI * 2 - Math.PI / 2;
+        x = cx + Math.cos(angle) * Math.min(W * 0.33, 250 + total * 12);
+        y = cy + Math.sin(angle) * Math.min(H * 0.31, 175 + total * 8);
       }
 
-      grid.innerHTML = filtered.map(note => {
-        const meta = getSubjectMeta(note.subject);
-        const previewPoints = note.points.slice(0, 3);
-        return `
-          <article class="bg-slate-900/90 border ${meta.cardBorder} rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 shadow-xl">
-            <div>
-              <!-- 頂部標籤列 -->
-              <div class="flex items-center justify-between gap-2 mb-2.5">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${meta.badgeClass}">
-                  ${meta.icon} ${meta.name}
-                </span>
-                <span class="text-[11px] text-slate-400 truncate max-w-[190px]" title="${note.chapter}">
-                  ${note.chapter}
-                </span>
-              </div>
+      const totalAttempts = node.correct + node.wrong;
+      const blueRatio = totalAttempts > 0 ? node.correct / totalAttempts : 0;
+      const redRatio = totalAttempts > 0 ? node.wrong / totalAttempts : 0;
+      const greenAlpha = Math.min(0.85, 0.28 + node.noteCount * 0.16);
 
-              <!-- 單元標題 -->
-              <h4 class="text-lg font-black text-white leading-snug mb-2">
-                ${note.title}
-              </h4>
+      let boxShadows = [`inset 0 0 28px rgba(16, 185, 129, ${greenAlpha})`];
+      let borderColor = "rgba(16, 185, 129, 0.65)";
+      if (totalAttempts > 0) {
+        if (blueRatio >= 0.6 && redRatio < 0.4) {
+          borderColor = "#38bdf8";
+          boxShadows.push(`0 0 ${18 + blueRatio * 22}px rgba(56, 189, 248, 0.75)`);
+        } else if (redRatio >= 0.5) {
+          borderColor = "#f43f5e";
+          boxShadows.push(`0 0 ${18 + redRatio * 24}px rgba(244, 63, 94, 0.85)`);
+        } else {
+          borderColor = "#a855f7";
+          boxShadows.push(`-6px 0 20px rgba(56, 189, 248, 0.75)`, `6px 0 20px rgba(244, 63, 94, 0.75)`);
+        }
+      }
 
-              <!-- 核心觀念一句話 -->
-              <div class="bg-slate-950/75 border border-slate-800 rounded-xl p-3 mb-3">
-                <div class="text-[11px] font-bold ${meta.accentText} mb-0.5">💡 核心觀念</div>
-                <p class="text-xs text-slate-200 leading-relaxed">${note.core}</p>
-              </div>
+      const planet = document.createElement("div");
+      planet.className = "planet-node";
+      planet.style.width = `${size}px`;
+      planet.style.height = `${size}px`;
+      planet.style.left = `${x}px`;
+      planet.style.top = `${y}px`;
+      planet.style.background = `radial-gradient(circle at 35% 30%, rgba(52, 211, 153, ${greenAlpha}), rgba(6, 78, 59, 0.85) 70%, rgba(15, 23, 42, 0.95) 100%)`;
+      planet.style.border = `3px solid ${borderColor}`;
+      planet.style.boxShadow = boxShadows.join(", ");
 
-              <!-- 重點預覽 -->
-              <ul class="space-y-1.5 text-xs text-slate-300 mb-3">
-                ${previewPoints.map(pt => `
-                  <li class="flex items-start gap-1.5">
-                    <span class="${meta.accentText} mt-0.5">▸</span>
-                    <span class="line-clamp-2">${pt}</span>
-                  </li>
-                `).join('')}
-              </ul>
+      const isChecked = selectedPaths.has(node.fullPath);
+      const statusBadge = totalAttempts === 0 ? `筆記 ${node.noteCount} 筆` : `熟練 ${Math.round(blueRatio * 100)}%｜錯題 ${node.wrong}`;
 
-              <!-- 口訣標籤 -->
-              ${note.mnemonic ? `
-                <div class="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-200 mb-3">
-                  <span class="font-bold">🔥 口訣：</span>${note.mnemonic}
-                </div>
-              ` : ''}
-            </div>
-
-            <!-- 底部操作列 -->
-            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-              <button onclick="openNoteDetail('${note.id}')" class="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white transition">
-                📖 展開完整秘笈 (${note.points.length}點)
-              </button>
-              ${note.interactiveUrl ? `
-                <button onclick="launchInteractiveMap('${note.interactiveUrl}')" class="py-2 px-3 rounded-xl border ${meta.btnBg} text-xs font-extrabold transition whitespace-nowrap">
-                  ${note.interactiveLabel || '互動圖解 →'}
-                </button>
-              ` : ''}
-            </div>
-          </article>
-        `;
-      }).join('');
-    }
-
-    // 展開統一筆記完整彈窗
-    function openNoteDetail(id) {
-      const note = notesData.find(n => n.id === id);
-      if (!note) return;
-      const meta = getSubjectMeta(note.subject);
-
-      document.getElementById('noteDetailContent').innerHTML = `
-        <div class="flex flex-wrap items-center gap-2 mb-2">
-          <span class="px-3 py-1 rounded-full text-xs font-bold border ${meta.badgeClass}">${meta.icon} ${meta.name}科秘笈</span>
-          <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">${note.chapter}</span>
-          <span class="text-xs text-slate-500 ml-auto">建立日期：${note.createdAt || '近期'}</span>
-        </div>
-
-        <h2 class="text-2xl font-black text-white mt-1">${note.title}</h2>
-
-        <div class="mt-4 bg-slate-950 border border-slate-800 rounded-2xl p-4">
-          <div class="text-xs font-bold ${meta.accentText} mb-1">💡 核心觀念一句話</div>
-          <p class="text-sm text-slate-100 font-medium leading-relaxed">${note.core}</p>
-        </div>
-
-        <div class="mt-4 space-y-2.5">
-          <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">📌 結構化完整重點整理</div>
-          <ul class="space-y-2.5 bg-slate-950/60 border border-slate-800 rounded-2xl p-4">
-            ${note.points.map((pt, idx) => `
-              <li class="flex items-start gap-2.5 text-sm text-slate-200 leading-relaxed">
-                <span class="w-5 h-5 rounded-full bg-slate-800 text-xs font-bold ${meta.accentText} flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
-                <span>${pt}</span>
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-          <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5">
-            <div class="text-xs font-bold text-amber-300 mb-1">🔥 江湖必背口訣</div>
-            <p class="text-xs sm:text-sm text-amber-100 leading-relaxed">${note.mnemonic || '無'}</p>
-          </div>
-          <div class="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-3.5">
-            <div class="text-xs font-bold text-rose-300 mb-1">🎯 會考／段考高頻考點</div>
-            <p class="text-xs sm:text-sm text-rose-100 leading-relaxed">${note.hotspot || '無'}</p>
-          </div>
-        </div>
-
-        <div class="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
-          <button onclick="deleteNote('${note.id}')" class="text-xs text-rose-400 hover:underline">刪除此筆筆記</button>
-          ${note.interactiveUrl ? `
-            <button onclick="launchInteractiveMap('${note.interactiveUrl}')" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 font-black text-sm shadow-lg">
-              🗺️ ${note.interactiveLabel || '開啟互動模組 →'}
-            </button>
-          ` : ''}
+      planet.innerHTML = `
+        <div class="planet-check ${isChecked ? 'checked' : ''}" title="勾選納入複選出題範圍">${isChecked ? '✓' : ''}</div>
+        <div class="planet-title">${node.name}</div>
+        <div class="planet-meta">${statusBadge}</div>
+        <div class="planet-actions">
+          <button class="planet-act-btn rename-btn" title="重新命名星球">✏️</button>
+          <button class="planet-act-btn del delete-btn" title="刪除星球">🗑️</button>
         </div>
       `;
 
-      const modal = document.getElementById('noteDetailModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function deleteNote(id) {
-      notesData = notesData.filter(n => n.id !== id);
-      persistData();
-      closeModal('noteDetailModal');
-      renderNotes();
-      showToast('🗑️', '已移除該筆筆記');
-    }
-
-    // 啟動地理 3D 互動地圖連結（含檔案路徑提示）
-    function launchInteractiveMap(url) {
-      window.open(url, '_blank');
-      showToast('🗺️', `正在開啟互動單元 (${url})，請確認該檔已放在對應資料夾中！`);
-    }
-
-    // ==================== 渲染錯題題庫 (點選解答 + 章節出處) ====================
-    function renderMistakes() {
-      const container = document.getElementById('mistakesList');
-      const subjFilter = document.getElementById('mistakeSubjectFilter').value;
-      const statusFilter = document.getElementById('mistakeStatusFilter').value;
-      const searchKw = (document.getElementById('globalSearchInput')?.value || '').trim().toLowerCase();
-
-      const filtered = mistakesData.filter(m => {
-        const matchSubj = subjFilter === 'all' || m.subject === subjFilter;
-        const matchStatus = statusFilter === 'all' ||
-          (statusFilter === 'mastered' && m.mastered) ||
-          (statusFilter === 'pending' && !m.mastered);
-        const matchKw = !searchKw ||
-          m.question.toLowerCase().includes(searchKw) ||
-          m.chapterRef.toLowerCase().includes(searchKw) ||
-          (m.conceptTag && m.conceptTag.toLowerCase().includes(searchKw));
-        return matchSubj && matchStatus && matchKw;
+      planet.querySelector(".planet-check").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (selectedPaths.has(node.fullPath)) selectedPaths.delete(node.fullPath);
+        else selectedPaths.add(node.fullPath);
+        updateQuizButton();
+        renderGalaxy();
       });
 
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="bg-slate-900/70 border border-dashed border-slate-700 rounded-2xl p-10 text-center">
-            <div class="text-3xl mb-2">🏆</div>
-            <div class="text-base font-bold text-slate-300">目前沒有符合篩選條件的錯題</div>
-            <p class="text-xs text-slate-500 mt-1">點擊「+ 上傳新錯題」把寫錯的考題拍下來存進修煉庫吧！</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = filtered.map((m, idx) => {
-        const meta = getSubjectMeta(m.subject);
-        return `
-          <div id="mistake-card-${m.id}" class="bg-slate-900/95 border ${m.mastered ? 'border-emerald-500/35' : 'border-slate-800'} rounded-2xl p-5 shadow-xl transition">
-            <!-- 頂部狀態與來源列 -->
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${meta.badgeClass}">
-                  ${meta.icon} ${meta.name}錯題 #${idx + 1}
-                </span>
-                ${m.examSource ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">${m.examSource}</span>` : ''}
-                ${m.conceptTag ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">🏷️ ${m.conceptTag}</span>` : ''}
-              </div>
-
-              <div class="flex items-center gap-2">
-                <button onclick="toggleMistakeMastered('${m.id}')" class="px-3 py-1 rounded-full text-xs font-bold transition ${
-                  m.mastered
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
-                }">
-                  ${m.mastered ? '✅ 已精熟斬殺' : '🔥 待複習（點此標記精熟）'}
-                </button>
-                <button onclick="deleteMistake('${m.id}')" title="刪除錯題" class="text-xs text-slate-500 hover:text-rose-400 px-1.5">✕</button>
-              </div>
-            </div>
-
-            <!-- 題目圖片 (若有上傳) -->
-            ${m.imageData ? `
-              <div class="mb-3 bg-slate-950 p-2 rounded-xl border border-slate-800 inline-block">
-                <img src="${m.imageData}" alt="錯題題目圖" class="max-h-52 rounded-lg" />
-              </div>
-            ` : ''}
-
-            <!-- 題幹 -->
-            <p class="text-sm sm:text-base font-bold text-white leading-relaxed mb-3">
-              ${m.question}
-            </p>
-
-            <!-- 互動重做選項 A/B/C/D -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
-              ${['A', 'B', 'C', 'D'].map(optKey => `
-                <button onclick="attemptMistakeOption('${m.id}', '${optKey}')"
-                  id="opt-btn-${m.id}-${optKey}"
-                  class="opt-btn-${m.id} text-left p-3 rounded-xl bg-slate-800/85 hover:bg-slate-700/90 border border-slate-700 text-xs sm:text-sm text-slate-200 font-medium transition flex items-start gap-2">
-                  <span class="font-black text-cyan-300">(${optKey})</span>
-                  <span>${m.options[optKey] || ''}</span>
-                </button>
-              `).join('')}
-            </div>
-
-            <!-- 點選解答按鈕 -->
-            <div class="flex items-center justify-between gap-3">
-              <button onclick="revealMistakeAnswer('${m.id}')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500/25 to-amber-500/25 hover:from-rose-500/35 hover:to-amber-500/35 border border-rose-500/40 text-rose-200 font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition">
-                <span>💡</span>
-                <span id="reveal-btn-text-${m.id}">點選查看解答與章節出處</span>
-              </button>
-              <span class="text-[11px] text-slate-500">收錄日：${m.createdAt || '近期'}</span>
-            </div>
-
-            <!-- 隱藏的詳解與章節出處抽屜 -->
-            <div id="answer-panel-${m.id}" class="hidden mt-4 pt-4 border-t border-slate-800 space-y-3 animate-fade-in">
-              <div class="flex flex-wrap items-center gap-3">
-                <span class="px-3 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-black">
-                  ✅ 正確解答：(${m.correctChoice})
-                </span>
-                ${m.wrongChoice ? `
-                  <span class="px-3 py-1 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs sm:text-sm font-bold">
-                    ❌ 當時誤選：(${m.wrongChoice})
-                  </span>
-                ` : ''}
-              </div>
-
-              <!-- 課本章節出處 -->
-              <div class="bg-amber-500/10 border border-amber-500/35 rounded-xl p-3">
-                <div class="text-xs font-black text-amber-300 mb-0.5">📚 課本章節出處</div>
-                <div class="text-xs sm:text-sm text-amber-100 font-semibold">${m.chapterRef}</div>
-              </div>
-
-              <!-- 詳細解析 -->
-              <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5">
-                <div class="text-xs font-black text-cyan-300 mb-1">🧠 逐項詳細解析與觀念釐清</div>
-                <div class="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line">${m.explanation}</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // 學生重新點選錯題選項測試
-    function attemptMistakeOption(id, chosenKey) {
-      const m = mistakesData.find(item => item.id === id);
-      if (!m) return;
-
-      document.querySelectorAll(`.opt-btn-${id}`).forEach(btn => {
-        btn.classList.remove('bg-emerald-500/25', 'border-emerald-400', 'bg-rose-500/25', 'border-rose-400');
+      planet.querySelector(".rename-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        renamePlanet(node.fullPath, node.name);
       });
 
-      const chosenBtn = document.getElementById(`opt-btn-${id}-${chosenKey}`);
-      const correctBtn = document.getElementById(`opt-btn-${id}-${m.correctChoice}`);
+      planet.querySelector(".delete-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        deletePlanet(node.fullPath, node.name);
+      });
 
-      if (chosenKey === m.correctChoice) {
-        chosenBtn.classList.add('bg-emerald-500/25', 'border-emerald-400');
-        showToast('🎉', `答對了！正確答案就是 (${m.correctChoice})`);
-      } else {
-        chosenBtn.classList.add('bg-rose-500/25', 'border-rose-400');
-        if (correctBtn) correctBtn.classList.add('bg-emerald-500/25', 'border-emerald-400');
-        showToast('💡', `選了 (${chosenKey})，正確答案是 (${m.correctChoice})，快看下方章節解析！`);
-      }
+      planet.addEventListener("click", () => {
+        if (node.isLeaf) openDetailPanel(node);
+        else { currentPath = [...currentPath, node.name]; renderGalaxy(); }
+      });
 
-      revealMistakeAnswer(id, true);
-    }
+      container.appendChild(planet);
+    });
+  }
 
-    // 展開或收合錯題詳解與章節出處
-    function revealMistakeAnswer(id, forceOpen = false) {
-      const panel = document.getElementById(`answer-panel-${id}`);
-      const btnText = document.getElementById(`reveal-btn-text-${id}`);
-      if (!panel) return;
+  function updateQuizButton() {
+    const btn = document.getElementById("quiz-btn");
+    btn.disabled = selectedPaths.size === 0;
+    btn.textContent = `🎯 雙軌複選出題 (${selectedPaths.size})`;
+  }
 
-      const isHidden = panel.classList.contains('hidden');
-      if (isHidden || forceOpen) {
-        panel.classList.remove('hidden');
-        btnText.textContent = '收合解答與章節出處';
-      } else {
-        panel.classList.add('hidden');
-        btnText.textContent = '點選查看解答與章節出處';
-      }
-    }
+  /* Right Drawer */
+  function openDetailPanel(node) {
+    currentDrawerNode = node;
+    document.getElementById("panel-title").textContent = `📘 ${node.name}`;
+    document.getElementById("panel-stats").textContent = `座標：${node.fullPath} ｜ 答對 ${node.correct} 次 / 錯題 ${node.wrong} 次`;
 
-    function toggleMistakeMastered(id) {
-      const m = mistakesData.find(item => item.id === id);
-      if (!m) return;
-      m.mastered = !m.mastered;
-      persistData();
-      renderMistakes();
-      showToast(m.mastered ? '🏆' : '🔥', m.mastered ? '太棒了！已標記為精熟斬殺！' : '已移回待複習清單');
-    }
+    document.getElementById("panel-rename-btn").onclick = () => renamePlanet(node.fullPath, node.name);
 
-    function deleteMistake(id) {
-      mistakesData = mistakesData.filter(m => m.id !== id);
-      persistData();
-      renderMistakes();
-      showToast('🗑️', '已移除該道錯題');
-    }
+    document.getElementById("panel-quiz-btn").onclick = () => {
+      selectedPaths.clear();
+      selectedPaths.add(node.fullPath);
+      updateQuizButton();
+      renderGalaxy();
+      openQuizConfigModal();
+    };
 
-    // ==================== 功能一：上傳資料自動生成統一風格筆記 ====================
-    function openNoteUploadModal() {
-      uploadedNoteFileObj = null;
-      clearNoteFile();
-      document.getElementById('noteGenStatus').textContent = '等待輸入資料...';
-      const modal = document.getElementById('noteUploadModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
+    switchDrawerTab("notes");
+    resizerEl.classList.add("visible");
+    detailPanelEl.classList.add("open");
+    applyPanelRatio(savedPanelPercent);
+  }
 
-    function handleNoteFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+  function closeDetailPanel() {
+    detailPanelEl.classList.remove("open");
+    resizerEl.classList.remove("visible");
+    if (typeof resizeStarCanvas === "function") resizeStarCanvas();
+    renderGalaxy();
+  }
 
-      const previewBox = document.getElementById('noteFilePreviewBox');
-      const imgThumb = document.getElementById('noteImgThumb');
-      const fileIcon = document.getElementById('noteFileIcon');
-      document.getElementById('noteFileName').textContent = file.name;
-      previewBox.classList.remove('hidden');
+  function switchDrawerTab(tab) {
+    currentDrawerTab = tab;
+    document.getElementById("tab-notes-btn").classList.toggle("active", tab === "notes");
+    document.getElementById("tab-mistakes-btn").classList.toggle("active", tab === "mistakes");
+    renderDrawerContent();
+  }
 
-      const reader = new FileReader();
-      if (file.type.startsWith('image/')) {
-        reader.onload = e => {
-          imgThumb.src = e.target.result;
-          imgThumb.classList.remove('hidden');
-          fileIcon.classList.add('hidden');
-          uploadedNoteFileObj = {
-            name: file.name,
-            mimeType: file.type,
-            base64: e.target.result.split(',')[1]
-          };
-        };
-        reader.readAsDataURL(file);
-      } else if (file.type === 'application/pdf') {
-        imgThumb.classList.add('hidden');
-        fileIcon.classList.remove('hidden');
-        fileIcon.textContent = '📕';
-        reader.onload = e => {
-          uploadedNoteFileObj = {
-            name: file.name,
-            mimeType: 'application/pdf',
-            base64: e.target.result.split(',')[1]
-          };
-        };
-        reader.readAsDataURL(file);
-      } else {
-        // TXT / Markdown
-        imgThumb.classList.add('hidden');
-        fileIcon.classList.remove('hidden');
-        fileIcon.textContent = '📝';
-        reader.onload = e => {
-          document.getElementById('uploadNoteRawText').value = e.target.result;
-          uploadedNoteFileObj = { name: file.name, mimeType: 'text/plain', textContent: e.target.result };
-        };
-        reader.readAsText(file);
-      }
-    }
+  function deleteSingleNote(path, noteIdx) {
+    if (!confirm("確定要刪除這張筆記卡片嗎？")) return;
+    const leaf = db.find(item => item.path === path);
+    if (!leaf) return;
+    leaf.notes.splice(noteIdx, 1);
+    saveDB();
+    renderGalaxy();
+    renderDrawerContent();
+  }
 
-    function clearNoteFile() {
-      uploadedNoteFileObj = null;
-      document.getElementById('noteFileInput').value = '';
-      document.getElementById('noteFilePreviewBox').classList.add('hidden');
-    }
+  function editSingleNote(path, noteIdx) {
+    const leaf = db.find(item => item.path === path);
+    if (!leaf || !leaf.notes[noteIdx]) return;
+    const n = leaf.notes[noteIdx];
 
-    // 呼叫 Gemini API 將上傳的 PDF / 筆記圖片 / 網址 / 文字轉為統一格式 JSON
-    async function generateUnifiedNote() {
-      const subject = document.getElementById('uploadNoteSubject').value;
-      const chapter = document.getElementById('uploadNoteChapter').value.trim();
-      const urlInput = document.getElementById('uploadNoteUrl').value.trim();
-      const rawText = document.getElementById('uploadNoteRawText').value.trim();
+    editingNoteTarget = { path, noteIndex: noteIdx };
+    uploadedBuffers.latestTranscriptUrl = n.transcriptFileUrl || "";
+    hideAiRouteBadge("note-ai-route-badge");
+    document.getElementById("note-modal-heading").textContent = `✏️ 編輯單元筆記（${path}）`;
+    document.getElementById("note-hierarchy-box").style.display = "none";
+    document.getElementById("save-note-btn").textContent = "💾 儲存修改內容";
 
-      if (!uploadedNoteFileObj && !urlInput && !rawText) {
-        showToast('⚠️', '請先上傳檔案、貼上教學網址或輸入講義文字喔！');
+    document.getElementById("note-title").value = n.title || "";
+    document.getElementById("note-points").value = (n.points || []).join("\n");
+    document.getElementById("note-table-json").value = n.table ? JSON.stringify(n.table) : "";
+    document.getElementById("note-mnemonic").value = n.mnemonic || "";
+    document.getElementById("note-yt-url").value = n.youtubeUrl || "";
+    document.getElementById("note-interactive-link").value = n.interactiveLink || "";
+    uploadedBuffers.noteImgData = n.imageData || "";
+
+    const imgPrev = document.getElementById("note-img-preview");
+    if (n.imageData) { imgPrev.src = n.imageData; imgPrev.style.display = "inline-block"; }
+    else { imgPrev.style.display = "none"; }
+
+    document.getElementById("note-modal").classList.add("open");
+  }
+
+  function deleteSingleMistake(path, qIdx) {
+    if (!confirm("確定要從錯題本刪除此道題目嗎？")) return;
+    const leaf = db.find(item => item.path === path);
+    if (!leaf) return;
+    leaf.questions.splice(qIdx, 1);
+    if (leaf.stats.wrong > 0) leaf.stats.wrong--;
+    saveDB();
+    renderGalaxy();
+    renderDrawerContent();
+  }
+
+  function editSingleMistake(path, qIdx) {
+    const leaf = db.find(item => item.path === path);
+    if (!leaf || !leaf.questions[qIdx]) return;
+    const q = leaf.questions[qIdx];
+
+    editingMistakeTarget = { path, questionIndex: qIdx };
+    hideAiRouteBadge("mistake-ai-route-badge");
+    document.getElementById("mistake-modal-heading").textContent = `✏️ 編輯錯題與詳解（${path}）`;
+    document.getElementById("mistake-hierarchy-box").style.display = "none";
+    document.getElementById("save-mistake-btn").textContent = "💾 儲存修改後的錯題";
+
+    document.getElementById("m-question").value = q.q || "";
+    [0, 1, 2, 3].forEach(i => { document.getElementById(`m-opt-${i}`).value = q.opts[i] || ""; });
+    document.getElementById("m-answer").value = String(q.ans ?? 0);
+    document.getElementById("m-source-note").value = q.sourceNote || "";
+    document.getElementById("m-explanation").value = q.exp || "";
+    uploadedBuffers.mistakeImgData = q.imageData || "";
+
+    const imgPrev = document.getElementById("mistake-img-preview");
+    if (q.imageData) { imgPrev.src = q.imageData; imgPrev.style.display = "inline-block"; }
+    else { imgPrev.style.display = "none"; }
+
+    document.getElementById("mistake-modal").classList.add("open");
+  }
+
+  function renderDrawerContent() {
+    const list = document.getElementById("panel-content-list");
+    list.innerHTML = "";
+    const leaf = db.find(item => item.path === currentDrawerNode.fullPath);
+    if (!leaf) return;
+
+    if (currentDrawerTab === "notes") {
+      if (!leaf.notes || leaf.notes.length === 0) {
+        list.innerHTML = `<div style="color:#94a3b8; font-size:0.86rem;">尚無筆記，點擊上方「📘 AI 整理筆記/影音」來滋養此星球！</div>`;
         return;
       }
-
-      const btn = document.getElementById('btnGenerateUnifiedNote');
-      const statusEl = document.getElementById('noteGenStatus');
-      btn.disabled = true;
-      btn.innerHTML = '<span>⏳</span><span>AI 正在淬鍊並統一筆記格式中...</span>';
-      statusEl.textContent = '分析中...';
-
-      const subjName = subject === 'geo' ? '國中地理' : subject === 'his' ? '國中歷史' : '國中公民';
-      const prompt = `你是專業的臺灣國中社會科老師，請將使用者提供的學習資料（可能是筆記照片、PDF講義、教學網址或課堂文字）整理成「風格統一、適合國一至國三學生複習」的繁體中文重點筆記 JSON。
-科目：${subjName}
-章節提示：${chapter || '請自動判斷冊別與章節'}
-參考網址：${urlInput || '無'}
-補充文字：${rawText || '請直接讀取附件內容'}
-
-請嚴格輸出以下 JSON 結構：
-{
-  "chapter": "例如：國一上 地理｜第3章 臺灣的氣候",
-  "title": "精煉響亮的單元標題",
-  "core": "核心觀念一句話（40字以內）",
-  "points": ["【關鍵主題1】詳細重點說明...", "【關鍵主題2】詳細重點說明...", "【關鍵主題3】詳細重點說明...", "【關鍵主題4】詳細重點說明..."],
-  "mnemonic": "朗朗上口的江湖必背口訣",
-  "hotspot": "段考與國中教育會考最常考的比較題或陷阱"
-}`;
-
-      try {
-        const parts = [{ text: prompt }];
-        if (uploadedNoteFileObj && uploadedNoteFileObj.base64) {
-          parts.push({
-            inlineData: {
-              mimeType: uploadedNoteFileObj.mimeType,
-              data: uploadedNoteFileObj.base64
-            }
-          });
+      leaf.notes.forEach((n, idx) => {
+        const card = document.createElement("div");
+        card.className = "note-card";
+        let tableHtml = "";
+        if (n.table && n.table.headers && n.table.rows) {
+          tableHtml = `<table class="comp-table"><thead><tr>${n.table.headers.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${n.table.rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
         }
+        let mediaHtml = `<div class="media-row">`;
+        if (n.youtubeUrl) mediaHtml += `<a class="pill-link pill-yt" href="${n.youtubeUrl}" target="_blank">▶️ 觀看教學影片</a>`;
+        if (n.transcriptFileUrl) mediaHtml += `<a class="pill-link pill-txt" href="${n.transcriptFileUrl}" target="_blank">📄 雲端硬碟逐字稿 (.txt)</a>`;
+        if (n.interactiveLink) mediaHtml += `<a class="pill-link pill-3d" href="${n.interactiveLink}" target="_blank">🗺️ 開啟 3D 互動網頁</a>`;
+        if (n.imageData) mediaHtml += `<a class="pill-link" style="background:rgba(148,163,184,0.2); color:#e2e8f0;" href="${n.imageData}" target="_blank">🖼️ 檢視原始手寫稿</a>`;
+        mediaHtml += `</div>`;
 
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        card.innerHTML = `
+          <div class="note-card-header">
+            <h4>${n.title}</h4>
+            <div class="card-tools">
+              <button class="btn-ghost btn-mini" onclick="editSingleNote('${leaf.path}', ${idx})">✏️ 編輯</button>
+              <button class="btn-red btn-mini" onclick="deleteSingleNote('${leaf.path}', ${idx})">🗑️</button>
+            </div>
+          </div>
+          <ul>${(n.points || []).map(p => `<li>${p}</li>`).join("")}</ul>
+          ${tableHtml}
+          ${n.mnemonic ? `<div class="mnemonic-box">🔥 口訣：${n.mnemonic}</div>` : ""}
+          ${mediaHtml}
+        `;
+        list.appendChild(card);
+      });
+    } else {
+      if (!leaf.questions || leaf.questions.length === 0) {
+        list.innerHTML = `<div style="color:#94a3b8; font-size:0.86rem;">本單元尚無錯題紀錄。</div>`;
+        return;
+      }
+      leaf.questions.forEach((q, idx) => {
+        const card = document.createElement("div");
+        card.className = "note-card";
+        card.style.borderColor = "rgba(244, 63, 94, 0.35)";
+        const ansLetter = ["(A)", "(B)", "(C)", "(D)"][q.ans] || "";
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:6px;">
+            <div>
+              <span style="font-size:0.75rem; color:#fb7185;">⚔️ 錯題 #${idx + 1}</span>
+              <span class="badge-clean" style="margin-left:4px;">🧹 已淨化作答筆跡</span>
+            </div>
+            <div class="card-tools">
+              <button class="btn-ghost btn-mini" onclick="editSingleMistake('${leaf.path}', ${idx})">✏️ 編輯</button>
+              <button class="btn-red btn-mini" onclick="deleteSingleMistake('${leaf.path}', ${idx})">🗑️</button>
+            </div>
+          </div>
+          <div style="font-weight:600; font-size:0.94rem; margin-bottom:8px;">${q.q}</div>
+          <div style="font-size:0.88rem; color:#cbd5e1; line-height:1.6;">${q.opts.join("<br>")}</div>
+          <details style="margin-top:10px; background:rgba(15,23,42,0.7); padding:8px 10px; border-radius:8px;">
+            <summary style="cursor:pointer; color:#38bdf8; font-size:0.85rem; font-weight:600;">🔍 展開正解與 AI 盲點校正</summary>
+            <div style="margin-top:6px; font-size:0.86rem; color:#fde68a; line-height:1.6;"><strong>正確答案：${ansLetter}</strong><br>${q.exp}</div>
+          </details>
+        `;
+        list.appendChild(card);
+      });
+    }
+  }
+
+  /* Cascading Hierarchy Dropdowns */
+  const NEW_OPTION_VALUE = "__NEW__";
+  function getUniqueSegmentsAtLevel(levelIndex, parentSegments) {
+    const set = new Set();
+    db.forEach(item => {
+      const segs = item.path.split("/");
+      if (segs.length <= levelIndex) return;
+      for (let i = 0; i < levelIndex; i++) if (segs[i] !== parentSegments[i]) return;
+      if (segs[levelIndex]) set.add(segs[levelIndex]);
+    });
+    return Array.from(set);
+  }
+  function getResolvedValue(prefix, level) {
+    const sel = document.getElementById(`${prefix}-sel-l${level}`);
+    const inp = document.getElementById(`${prefix}-new-l${level}`);
+    if (!sel || !sel.value) return "";
+    return sel.value === NEW_OPTION_VALUE ? inp.value.trim().replace(/\//g, "-") : sel.value;
+  }
+  function populateDropdown(prefix, level, preselectVal = null) {
+    const sel = document.getElementById(`${prefix}-sel-l${level}`);
+    const inp = document.getElementById(`${prefix}-new-l${level}`);
+    inp.value = ""; inp.classList.remove("visible");
+    const parentSegs = [];
+    for (let i = 1; i < level; i++) {
+      const val = getResolvedValue(prefix, i);
+      if (!val) { sel.innerHTML = `<option value="">（請先完成第 ${i} 層）</option>`; sel.disabled = true; return; }
+      parentSegs.push(val);
+    }
+    sel.disabled = false;
+    const options = getUniqueSegmentsAtLevel(level - 1, parentSegs);
+    const emptyLabel = level === 1 ? "-- 請選擇或新增主科目 --" : `（不設第 ${level} 層，直接存於上一層）`;
+    let html = `<option value="">${emptyLabel}</option>`;
+    options.forEach(opt => { html += `<option value="${opt}">${opt}</option>`; });
+    html += `<option value="${NEW_OPTION_VALUE}">➕ 新增此層級項目...</option>`;
+    sel.innerHTML = html;
+    if (preselectVal && options.includes(preselectVal)) sel.value = preselectVal;
+  }
+  function onSelectLevel(prefix, level) {
+    const sel = document.getElementById(`${prefix}-sel-l${level}`);
+    const inp = document.getElementById(`${prefix}-new-l${level}`);
+    if (sel.value === NEW_OPTION_VALUE) { inp.classList.add("visible"); inp.focus(); }
+    else { inp.classList.remove("visible"); inp.value = ""; }
+    for (let next = level + 1; next <= 4; next++) populateDropdown(prefix, next, null);
+    updatePathPreview(prefix);
+  }
+  function onNewInput(prefix, level) {
+    for (let next = level + 1; next <= 4; next++) populateDropdown(prefix, next, null);
+    updatePathPreview(prefix);
+  }
+  function updatePathPreview(prefix) {
+    const parts = [];
+    for (let i = 1; i <= 4; i++) {
+      const val = getResolvedValue(prefix, i);
+      if (val) parts.push(val); else break;
+    }
+    const previewEl = document.getElementById(`${prefix}-path-preview`);
+    previewEl.textContent = parts.length ? `📍 目標星系座標：${parts.join(" / ")}` : "📍 目標星系座標：尚未完整選擇";
+    return parts;
+  }
+
+  /* AI Note Synthesizer */
+  async function runAiNoteSynthesis() {
+    const btn = document.getElementById("ai-synth-note-btn");
+    const rawText = document.getElementById("note-raw-text").value.trim();
+    const ytUrl = document.getElementById("note-yt-url").value.trim();
+    const imgData = uploadedBuffers.noteImgData;
+
+    if (!rawText && !ytUrl && !imgData) {
+      alert("請先上傳手寫筆記圖片、貼上 YouTube 網址，或在下方貼入逐字稿／講義文字！");
+      return;
+    }
+
+    const parts = updatePathPreview("n");
+    const topicHint = editingNoteTarget
+      ? editingNoteTarget.path
+      : (parts.length ? parts.join("_") : "知識星球筆記");
+
+    hideAiRouteBadge("note-ai-route-badge");
+    uploadedBuffers.latestTranscriptUrl = "";
+    btn.disabled = true;
+    btn.textContent = "⏳ 正在歸檔逐字稿至雲端硬碟並呼叫 AI 萃煉表格...";
+
+    try {
+      if (gasUrl) {
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          redirect: "follow",
           body: JSON.stringify({
-            contents: [{ role: 'user', parts }],
-            generationConfig: { responseMimeType: 'application/json' }
+            action: "ai_process",
+            mode: "note",
+            topicHint: topicHint,
+            text: `${rawText} ${ytUrl ? `(影片來源: ${ytUrl})` : ""}`.trim(),
+            imageBase64: imgData ? imgData.split(",")[1] : null
           })
         });
-
-        const result = await response.json();
-        const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!jsonText) throw new Error('Empty AI response');
-
-        const parsed = JSON.parse(jsonText);
-        if (parsed.chapter && !chapter) document.getElementById('uploadNoteChapter').value = parsed.chapter;
-        document.getElementById('previewNoteTitle').value = parsed.title || '新整理重點筆記';
-        document.getElementById('previewNoteCore').value = parsed.core || '';
-        document.getElementById('previewNotePoints').value = (parsed.points || []).join('\n');
-        document.getElementById('previewNoteMnemonic').value = parsed.mnemonic || '';
-        document.getElementById('previewNoteHotspot').value = parsed.hotspot || '';
-        statusEl.textContent = '✅ AI 統整完成！可微調後儲存';
-        showToast('✨', '已自動生成統一風格筆記預覽！');
-      } catch (err) {
-        // 離線或無金鑰時的本地智慧結構化備援
-        const lines = rawText.split(/\n+/).map(l => l.trim()).filter(Boolean);
-        document.getElementById('previewNoteTitle').value = chapter || (uploadedNoteFileObj ? uploadedNoteFileObj.name.replace(/\.[^/.]+$/, '') : '自訂社會科重點筆記');
-        document.getElementById('previewNoteCore').value = lines[0] || `本單元聚焦於${subjName}核心架構與因果脈絡分析。`;
-        document.getElementById('previewNotePoints').value = (lines.length > 0 ? lines : ['【重點一】請在此補充核心定義與成因', '【重點二】請在此補充地域或時代特色', '【重點三】請在此補充比較表格']).join('\n');
-        document.getElementById('previewNoteMnemonic').value = '抓關鍵字、畫對比表、理解因果不死背！';
-        document.getElementById('previewNoteHotspot').value = '常考概念配對與圖表判讀題。';
-        statusEl.textContent = '✅ 已套用統一模板（可手動編輯）';
-        showToast('📝', '已將內容套入統一筆記模板，請確認後儲存！');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span>✨</span><span>一鍵生成統一風格重點筆記</span>';
-      }
-    }
-
-    function saveUnifiedNote() {
-      const title = document.getElementById('previewNoteTitle').value.trim();
-      const core = document.getElementById('previewNoteCore').value.trim();
-      const pointsRaw = document.getElementById('previewNotePoints').value.trim();
-
-      if (!title || !pointsRaw) {
-        showToast('⚠️', '請先生成或填寫「單元標題」與「結構化重點」！');
-        return;
-      }
-
-      const subject = document.getElementById('uploadNoteSubject').value;
-      const chapter = document.getElementById('uploadNoteChapter').value.trim() || `${getSubjectMeta(subject).name}科自訂單元`;
-      const mnemonic = document.getElementById('previewNoteMnemonic').value.trim();
-      const hotspot = document.getElementById('previewNoteHotspot').value.trim();
-
-      const newNote = {
-        id: 'note-' + Date.now(),
-        subject,
-        chapter,
-        title,
-        core: core || '掌握核心概念與考點脈絡。',
-        points: pointsRaw.split(/\n+/).map(s => s.replace(/^[•\-*]\s*/, '').trim()).filter(Boolean),
-        mnemonic,
-        hotspot,
-        createdAt: new Date().toISOString().slice(0, 10)
-      };
-
-      notesData.unshift(newNote);
-      persistData();
-      closeModal('noteUploadModal');
-      switchMainTab(subject);
-      showToast('🎉', `已將「${title}」加入${getSubjectMeta(subject).name}秘笈庫！`);
-    }
-
-    // ==================== 功能二：上傳新錯題與 AI 解析章節出處 ====================
-    function openMistakeUploadModal() {
-      uploadedMistakeImgBase64 = null;
-      clearMistakeImg();
-      document.getElementById('mistakeAiStatus').textContent = '可手動填寫或按 AI 解析';
-      const modal = document.getElementById('mistakeUploadModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function handleMistakeImgUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        uploadedMistakeImgBase64 = e.target.result;
-        document.getElementById('mistakeImgPreview').src = e.target.result;
-        document.getElementById('mistakeImgPreviewWrap').classList.remove('hidden');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearMistakeImg() {
-      uploadedMistakeImgBase64 = null;
-      document.getElementById('mistakeImgInput').value = '';
-      document.getElementById('mistakeImgPreviewWrap').classList.add('hidden');
-    }
-
-    async function analyzeMistakeWithAI() {
-      const subject = document.getElementById('mSubject').value;
-      const qText = document.getElementById('mQuestionText').value.trim();
-      const optA = document.getElementById('mOptA').value.trim();
-      const optB = document.getElementById('mOptB').value.trim();
-      const optC = document.getElementById('mOptC').value.trim();
-      const optD = document.getElementById('mOptD').value.trim();
-      const wrongChoice = document.getElementById('mWrongChoice').value;
-      const correctChoice = document.getElementById('mCorrectChoice').value;
-
-      if (!qText && !uploadedMistakeImgBase64) {
-        showToast('⚠️', '請先上傳錯題照片或輸入題目敘述！');
-        return;
-      }
-
-      const btn = document.getElementById('btnAnalyzeMistake');
-      const statusEl = document.getElementById('mistakeAiStatus');
-      btn.disabled = true;
-      btn.innerHTML = '<span>⏳</span><span>AI 正在比對課本章節與撰寫詳解...</span>';
-      statusEl.textContent = '解析中...';
-
-      const subjName = subject === 'geo' ? '國中地理' : subject === 'his' ? '國中歷史' : '國中公民';
-      const prompt = `你是臺灣國中社會科名師，請分析這道學生寫錯的題目（若有附圖請先辨識圖中的題目與選項），並以繁體中文輸出 JSON 格式的詳細解析與課本章節出處。
-科目：${subjName}
-題目文字：${qText || '請從圖片辨識'}
-選項：(A)${optA} (B)${optB} (C)${optC} (D)${optD}
-學生誤選：${wrongChoice}；參考正解：${correctChoice}
-
-請嚴格輸出以下 JSON：
-{
-  "question": "完整題目敘述",
-  "optA": "A選項內容",
-  "optB": "B選項內容",
-  "optC": "C選項內容",
-  "optD": "D選項內容",
-  "correctChoice": "A或B或C或D",
-  "chapterRef": "精確的臺灣國中課本章節出處，例如：國中地理 第一冊 第2章 臺灣的地形與海岸（重點2-3）",
-  "conceptTag": "核心考點短標籤",
-  "explanation": "詳細逐項解析：先說明正解為何正確，再針對誤選選項與其他選項逐一破解陷阱"
-}`;
-
-      try {
-        const parts = [{ text: prompt }];
-        if (uploadedMistakeImgBase64) {
-          parts.push({
-            inlineData: {
-              mimeType: 'image/png',
-              data: uploadedMistakeImgBase64.split(',')[1]
-            }
-          });
+        const json = await res.json();
+        if (json.status === "ok" && json.data) {
+          document.getElementById("note-title").value = json.data.title || "AI 結構化重點整理";
+          document.getElementById("note-points").value = (json.data.points || []).join("\n");
+          document.getElementById("note-mnemonic").value = json.data.mnemonic || "";
+          if (json.data.table) document.getElementById("note-table-json").value = JSON.stringify(json.data.table);
+          uploadedBuffers.latestTranscriptUrl = json.transcriptFileUrl || "";
+          showAiRouteBadge(
+            "note-ai-route-badge",
+            json.usedModel || "免費主力",
+            Boolean(json.isPaid),
+            json.transcriptFileUrl || ""
+          );
+        } else {
+          alert("AI 回傳異常：" + (json.message || "未知錯誤"));
         }
+      } else {
+        await new Promise(r => setTimeout(r, 600));
+        const topic = editingNoteTarget ? editingNoteTarget.path.split("/").pop() : (parts[parts.length - 1] || "核心觀念整理");
+        document.getElementById("note-title").value = `${topic}｜AI 結構化重點與對照表`;
+        document.getElementById("note-points").value = rawText
+          ? rawText.split(/[。；\n]/).filter(Boolean).slice(0, 4).join("\n")
+          : "已保留原始手寫圖檔與教學影片連結，系統自動萃取成因、特徵與區域對照架構。";
+        document.getElementById("note-table-json").value = JSON.stringify({
+          headers: ["比較維度", "類型 A（核心特徵）", "類型 B（對照特徵）"],
+          rows: [
+            ["形成原因", "自然地質 / 歷史背景驅動", "人為開發 / 制度演變影響"],
+            ["代表分布", "北部 / 東部重點區域", "中南部 / 離島重點區域"]
+          ]
+        });
+        document.getElementById("note-mnemonic").value = "抓成因、比差異、記代表地名！";
+        showAiRouteBadge("note-ai-route-badge", "本地智慧模擬模式（未綁定 GAS）", false, "");
+      }
+    } catch (err) {
+      alert("AI 連線發生錯誤：" + err.message + "\n請確認 GAS 網址結尾為 /exec 且權限為「所有人」。");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🪄 呼叫 AI 自動萃煉為統一風格筆記與比較表格";
+    }
+  }
 
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+  /* AI Mistake Handwriting Cleaner */
+  async function runAiMistakeClean() {
+    const btn = document.getElementById("ai-clean-mistake-btn");
+    const imgData = uploadedBuffers.mistakeImgData;
+    if (!imgData && !gasUrl) {
+      alert("請先上傳一張考卷錯題照片（若已綁定 GAS 雲端網址，AI 將直接看圖擦除紅筆作答痕跡並還原題目）！");
+      return;
+    }
+
+    hideAiRouteBadge("mistake-ai-route-badge");
+    btn.disabled = true;
+    btn.textContent = "🧹 AI 正在擦除手寫筆跡並還原純淨試題...";
+
+    try {
+      if (gasUrl && imgData) {
+        const res = await fetch(gasUrl, {
+          method: "POST",
+          redirect: "follow",
           body: JSON.stringify({
-            contents: [{ role: 'user', parts }],
-            generationConfig: { responseMimeType: 'application/json' }
+            action: "ai_process",
+            mode: "mistake_clean",
+            imageBase64: imgData.split(",")[1]
           })
         });
-
-        const result = await response.json();
-        const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!jsonText) throw new Error('Empty response');
-
-        const parsed = JSON.parse(jsonText);
-        if (parsed.question) document.getElementById('mQuestionText').value = parsed.question;
-        if (parsed.optA) document.getElementById('mOptA').value = parsed.optA;
-        if (parsed.optB) document.getElementById('mOptB').value = parsed.optB;
-        if (parsed.optC) document.getElementById('mOptC').value = parsed.optC;
-        if (parsed.optD) document.getElementById('mOptD').value = parsed.optD;
-        if (parsed.correctChoice) document.getElementById('mCorrectChoice').value = parsed.correctChoice;
-        document.getElementById('mChapterRef').value = parsed.chapterRef || `${subjName} 重點章節`;
-        document.getElementById('mConceptTag').value = parsed.conceptTag || '核心概念辨析';
-        document.getElementById('mExplanation').value = parsed.explanation || '';
-        statusEl.textContent = '✅ 章節出處與詳解已自動生成！';
-        showToast('🤖', 'AI 已自動標出課本章節出處並寫好詳解！');
-      } catch (err) {
-        document.getElementById('mChapterRef').value = `${subjName} 第一冊 相關核心章節`;
-        document.getElementById('mConceptTag').value = '觀念比較與陷阱釐清';
-        document.getElementById('mExplanation').value = `正確答案為 (${correctChoice})。\n• 為何 (${correctChoice}) 正確：符合本單元核心定義與因果條件。\n• 為何 (${wrongChoice}) 錯誤：屬於常見混淆概念，複習時請特別留意題幹關鍵字！`;
-        statusEl.textContent = '✅ 已生成解析模板（可微調）';
-        showToast('📝', '已產生章節出處與解析模板！');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span>🤖</span><span>AI 自動識別題目、章節出處與詳細解析</span>';
-      }
-    }
-
-    function saveNewMistake() {
-      const question = document.getElementById('mQuestionText').value.trim();
-      const chapterRef = document.getElementById('mChapterRef').value.trim();
-      const explanation = document.getElementById('mExplanation').value.trim();
-
-      if (!question && !uploadedMistakeImgBase64) {
-        showToast('⚠️', '請填寫題目內容或上傳題目圖片！');
-        return;
-      }
-
-      const newMistake = {
-        id: 'mis-' + Date.now(),
-        subject: document.getElementById('mSubject').value,
-        examSource: document.getElementById('mExamSource').value.trim() || '自主錯題收錄',
-        question: question || '（請參閱上方考卷題目截圖）',
-        imageData: uploadedMistakeImgBase64 || null,
-        options: {
-          A: document.getElementById('mOptA').value.trim() || '選項 A',
-          B: document.getElementById('mOptB').value.trim() || '選項 B',
-          C: document.getElementById('mOptC').value.trim() || '選項 C',
-          D: document.getElementById('mOptD').value.trim() || '選項 D'
-        },
-        wrongChoice: document.getElementById('mWrongChoice').value,
-        correctChoice: document.getElementById('mCorrectChoice').value,
-        chapterRef: chapterRef || '國中社會科 核心單元',
-        conceptTag: document.getElementById('mConceptTag').value.trim() || '必考重點',
-        explanation: explanation || '請參考課本對應章節重點複習。',
-        mastered: false,
-        createdAt: new Date().toISOString().slice(0, 10)
-      };
-
-      mistakesData.unshift(newMistake);
-      persistData();
-      closeModal('mistakeUploadModal');
-      switchMainTab('mistakes');
-      showToast('⚔️', '新錯題已加入修煉題庫！');
-    }
-
-    // ==================== 備份 / 還原 JSON ====================
-    function openBackupModal() {
-      const m = document.getElementById('backupModal');
-      m.classList.remove('hidden');
-      m.classList.add('flex');
-    }
-
-    function exportAllData() {
-      const payload = {
-        app: '勇闖江湖的詹姆士',
-        exportedAt: new Date().toISOString(),
-        notes: notesData,
-        mistakes: mistakesData
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `勇闖江湖的詹姆士_學習備份_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('💾', '已匯出完整學習紀錄 JSON 檔！');
-    }
-
-    function importAllData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          if (Array.isArray(parsed.notes) && Array.isArray(parsed.mistakes)) {
-            notesData = parsed.notes;
-            mistakesData = parsed.mistakes;
-            persistData();
-            renderCurrentView();
-            closeModal('backupModal');
-            showToast('🎉', '學習紀錄已成功還原！');
-          } else {
-            showToast('⚠️', '檔案格式不符，請選擇正確的備份檔');
-          }
-        } catch {
-          showToast('⚠️', 'JSON 解析失敗');
+        const json = await res.json();
+        if (json.status === "ok" && json.data) {
+          document.getElementById("m-question").value = json.data.question || "";
+          (json.data.options || []).forEach((o, i) => { if (i < 4) document.getElementById(`m-opt-${i}`).value = o; });
+          if (typeof json.data.ans === "number") document.getElementById("m-answer").value = String(json.data.ans);
+          document.getElementById("m-explanation").value = json.data.explanation || "";
+          showAiRouteBadge("mistake-ai-route-badge", json.usedModel || "免費主力", Boolean(json.isPaid), "");
+        } else {
+          alert("AI 辨識異常：" + (json.message || "未知錯誤"));
         }
-      };
-      reader.readAsText(file);
-    }
-
-    function resetToDefaults() {
-      notesData = [...DEFAULT_NOTES];
-      mistakesData = [...DEFAULT_MISTAKES];
-      persistData();
-      renderCurrentView();
-      closeModal('backupModal');
-      showToast('🔄', '已還原為初始範例資料');
-    }
-
-    // ==================== 共用彈窗與提示 ====================
-    function closeModal(id) {
-      const m = document.getElementById(id);
-      if (m) {
-        m.classList.add('hidden');
-        m.classList.remove('flex');
+      } else {
+        await new Promise(r => setTimeout(r, 600));
+        showAiRouteBadge("mistake-ai-route-badge", "本地智慧模擬模式（未綁定 GAS）", false, "");
+        alert("✨ 本地模擬完成！在綁定 Google Apps Script 網址後，上傳考卷照片會由 Gemini 視覺模型自動過濾紅筆劃記，還原出乾淨空白題目與盲點解析。");
       }
+    } catch (err) {
+      alert("AI 連線發生錯誤：" + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🪄 執行 AI 筆跡擦除還原 ＋ 自動解析觀念盲點";
+    }
+  }
+
+  function openNoteModal() {
+    editingNoteTarget = null;
+    uploadedBuffers.latestTranscriptUrl = "";
+    hideAiRouteBadge("note-ai-route-badge");
+    document.getElementById("note-modal-heading").textContent = "📘 AI 筆記重組工廠（手寫圖 / YouTube ➔ 統一風格比較表）";
+    document.getElementById("note-hierarchy-box").style.display = "block";
+    document.getElementById("save-note-btn").textContent = "💾 確認儲存並滋養星球";
+
+    uploadedBuffers.noteImgData = "";
+    document.getElementById("note-img-preview").style.display = "none";
+    document.getElementById("note-title").value = "";
+    document.getElementById("note-points").value = "";
+    document.getElementById("note-table-json").value = "";
+    document.getElementById("note-mnemonic").value = "";
+    document.getElementById("note-yt-url").value = "";
+    document.getElementById("note-raw-text").value = "";
+
+    for (let lvl = 1; lvl <= 4; lvl++) populateDropdown("n", lvl, currentPath[lvl - 1] || null);
+    updatePathPreview("n");
+    document.getElementById("note-modal").classList.add("open");
+  }
+  function closeNoteModal() {
+    editingNoteTarget = null;
+    document.getElementById("note-modal").classList.remove("open");
+  }
+
+  function saveNewNote() {
+    const title = document.getElementById("note-title").value.trim();
+    const pointsText = document.getElementById("note-points").value.trim();
+    const mnemonic = document.getElementById("note-mnemonic").value.trim();
+    const youtubeUrl = document.getElementById("note-yt-url").value.trim();
+    const interactiveLink = document.getElementById("note-interactive-link").value;
+    let tableObj = null;
+    try {
+      const tRaw = document.getElementById("note-table-json").value.trim();
+      if (tRaw) tableObj = JSON.parse(tRaw);
+    } catch (e) {}
+
+    if (!title || !pointsText) {
+      alert("請填寫「筆記核心標題」與「結構化重點條列」！");
+      return;
     }
 
-    let toastTimer = null;
-    function showToast(icon, msg) {
-      const box = document.getElementById('toastBox');
-      document.getElementById('toastIcon').textContent = icon;
-      document.getElementById('toastMsg').textContent = msg;
-      box.classList.remove('hidden');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => {
-        box.classList.add('hidden');
-      }, 3200);
+    const noteObj = {
+      title,
+      points: pointsText.split("\n").map(s => s.trim()).filter(Boolean),
+      table: tableObj,
+      mnemonic,
+      youtubeUrl,
+      interactiveLink,
+      transcriptFileUrl: uploadedBuffers.latestTranscriptUrl || "",
+      imageData: uploadedBuffers.noteImgData
+    };
+
+    if (editingNoteTarget) {
+      const leaf = db.find(item => item.path === editingNoteTarget.path);
+      if (leaf) {
+        leaf.notes[editingNoteTarget.noteIndex] = noteObj;
+        saveDB();
+        closeNoteModal();
+        renderGalaxy();
+        renderDrawerContent();
+      }
+      return;
     }
-  </script>
+
+    const parts = updatePathPreview("n");
+    if (parts.length < 1) {
+      alert("請至少選擇或輸入「第 1 層主科目」！\n目前星系座標：" + (parts.length ? parts.join(" / ") : "（空）"));
+      return;
+    }
+
+    const rawPath = parts.join("/");
+    let existing = db.find(item => item.path === rawPath);
+    if (existing) existing.notes.push(noteObj);
+    else db.push({ path: rawPath, notes: [noteObj], questions: [], stats: { correct: 0, wrong: 0 } });
+
+    saveDB();
+    closeNoteModal();
+    renderGalaxy();
+    if (currentDrawerNode && currentDrawerNode.fullPath === rawPath) renderDrawerContent();
+  }
+
+  function openMistakeModal() {
+    editingMistakeTarget = null;
+    hideAiRouteBadge("mistake-ai-route-badge");
+    document.getElementById("mistake-modal-heading").textContent = "⚔️ AI 錯題淨化室（自動清除作答筆跡 ＋ 盲點校正）";
+    document.getElementById("mistake-hierarchy-box").style.display = "block";
+    document.getElementById("save-mistake-btn").textContent = "⚔️ 收入無筆跡錯題本";
+
+    uploadedBuffers.mistakeImgData = "";
+    document.getElementById("mistake-img-preview").style.display = "none";
+    document.getElementById("m-question").value = "";
+    [0, 1, 2, 3].forEach(i => { document.getElementById(`m-opt-${i}`).value = ""; });
+    document.getElementById("m-explanation").value = "";
+    document.getElementById("m-source-note").value = "";
+
+    for (let lvl = 1; lvl <= 4; lvl++) populateDropdown("m", lvl, currentPath[lvl - 1] || null);
+    updatePathPreview("m");
+    document.getElementById("mistake-modal").classList.add("open");
+  }
+  function closeMistakeModal() {
+    editingMistakeTarget = null;
+    document.getElementById("mistake-modal").classList.remove("open");
+  }
+
+  function saveNewMistake() {
+    const q = document.getElementById("m-question").value.trim();
+    const opts = [0, 1, 2, 3].map(i => document.getElementById(`m-opt-${i}`).value.trim());
+    const ans = parseInt(document.getElementById("m-answer").value, 10);
+    const exp = document.getElementById("m-explanation").value.trim();
+    const sourceNote = document.getElementById("m-source-note").value.trim();
+
+    if (!q || opts.some(o => !o) || !exp) {
+      alert("請完整填寫題幹、四個選項與解析！");
+      return;
+    }
+
+    const qObj = { q, opts, ans, exp, sourceNote, imageData: uploadedBuffers.mistakeImgData };
+
+    if (editingMistakeTarget) {
+      const leaf = db.find(item => item.path === editingMistakeTarget.path);
+      if (leaf) {
+        leaf.questions[editingMistakeTarget.questionIndex] = qObj;
+        saveDB();
+        closeMistakeModal();
+        renderDrawerContent();
+      }
+      return;
+    }
+
+    const parts = updatePathPreview("m");
+    if (parts.length < 1) {
+      alert("請確認至少已選擇或輸入「第 1 層主科目」！");
+      return;
+    }
+
+    const rawPath = parts.join("/");
+    let existing = db.find(item => item.path === rawPath);
+    if (existing) {
+      existing.questions.push(qObj);
+      existing.stats.wrong = (existing.stats.wrong || 0) + 1;
+    } else {
+      db.push({ path: rawPath, notes: [], questions: [qObj], stats: { correct: 0, wrong: 1 } });
+    }
+
+    saveDB();
+    closeMistakeModal();
+    renderGalaxy();
+    if (currentDrawerNode && currentDrawerNode.fullPath === rawPath) renderDrawerContent();
+  }
+
+  /* Dual-Source Quiz Engine */
+  function openQuizConfigModal() {
+    document.getElementById("quiz-setup-panel").style.display = "block";
+    document.getElementById("quiz-body").innerHTML = "";
+    document.getElementById("quiz-footer").style.display = "none";
+    document.getElementById("quiz-modal").classList.add("open");
+  }
+
+  function generateAndStartQuiz() {
+    const useMistakes = document.getElementById("src-mistakes").checked;
+    const useAiGen = document.getElementById("src-ai-gen").checked;
+    if (!useMistakes && !useAiGen) { alert("請至少勾選一種出題來源！"); return; }
+
+    const prefixes = Array.from(selectedPaths);
+    activeQuiz = [];
+    userAnswers = {};
+
+    db.forEach(item => {
+      const matched = prefixes.some(p => item.path === p || item.path.startsWith(p + "/"));
+      if (!matched) return;
+
+      if (useMistakes && item.questions && item.questions.length) {
+        item.questions.forEach(qObj => {
+          activeQuiz.push({ ...qObj, sourcePath: item.path, badge: "⚔️ 歷史錯題重做（已清除筆跡）" });
+        });
+      }
+
+      if (useAiGen && item.notes && item.notes.length) {
+        const n = item.notes[0];
+        activeQuiz.push({
+          q: `【AI 觀念變形題】根據「${n.title}」的整理，下列敘述何者最符合其核心特徵？`,
+          opts: [
+            `(A) ${n.points[0] || "符合該單元核心成因與區域特色"}`,
+            `(B) 與該單元地形／歷史成因完全相反之敘述`,
+            `(C) 僅發生於高緯度寒帶氣候區之特殊現象`,
+            `(D) 完全不受內營力或外營力作用影響`
+          ],
+          ans: 0,
+          exp: `本題由 AI 依據筆記「${n.title}」即時生成。記憶關鍵：${n.mnemonic || n.points[0]}`,
+          sourcePath: item.path,
+          badge: "🤖 AI 依筆記即時變形出題"
+        });
+      }
+    });
+
+    document.getElementById("quiz-setup-panel").style.display = "none";
+    const body = document.getElementById("quiz-body");
+    document.getElementById("quiz-footer").style.display = "flex";
+    document.getElementById("quiz-score-text").textContent = "";
+    document.getElementById("submit-quiz-btn").style.display = "inline-flex";
+
+    if (activeQuiz.length === 0) {
+      body.innerHTML = `<p style="color:#94a3b8; padding:16px 0;">所選範圍內尚無可用筆記或錯題！</p>`;
+      document.getElementById("submit-quiz-btn").style.display = "none";
+      return;
+    }
+
+    body.innerHTML = activeQuiz.map((q, i) => `
+      <div class="quiz-item">
+        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#38bdf8; margin-bottom:4px;">
+          <span>📍 出處：${q.sourcePath}</span>
+          <span style="color:#e9d5ff;">${q.badge}</span>
+        </div>
+        <div style="font-weight:600; margin-bottom:8px;">${i + 1}. ${q.q}</div>
+        ${q.opts.map((opt, optIdx) => `<button class="quiz-opt" id="opt-${i}-${optIdx}" onclick="selectOption(${i}, ${optIdx})">${opt}</button>`).join("")}
+        <div id="exp-${i}" style="display:none; margin-top:10px; font-size:0.84rem; color:#fde68a; background:rgba(0,0,0,0.35); padding:8px 12px; border-radius:8px;"></div>
+      </div>
+    `).join("");
+  }
+
+  function selectOption(qIdx, optIdx) {
+    userAnswers[qIdx] = optIdx;
+    activeQuiz[qIdx].opts.forEach((_, idx) => {
+      document.getElementById(`opt-${qIdx}-${idx}`).classList.toggle("selected", idx === optIdx);
+    });
+  }
+
+  function submitQuiz() {
+    let correctCount = 0;
+    activeQuiz.forEach((q, i) => {
+      const chosen = userAnswers[i];
+      const leaf = db.find(item => item.path === q.sourcePath);
+      const expEl = document.getElementById(`exp-${i}`);
+      expEl.style.display = "block";
+      expEl.textContent = `💡 解析：${q.exp}`;
+      q.opts.forEach((_, idx) => {
+        const btn = document.getElementById(`opt-${i}-${idx}`);
+        btn.disabled = true;
+        if (idx === q.ans) btn.classList.add("correct");
+        else if (idx === chosen) btn.classList.add("wrong");
+      });
+      if (chosen === q.ans) { correctCount++; if (leaf) leaf.stats.correct++; }
+      else { if (leaf) leaf.stats.wrong++; }
+    });
+    saveDB();
+    renderGalaxy();
+    document.getElementById("quiz-score-text").textContent = `🏆 本次得分：${correctCount} / ${activeQuiz.length}（星球光暈已更新！）`;
+    document.getElementById("submit-quiz-btn").style.display = "none";
+  }
+  function closeQuizModal() { document.getElementById("quiz-modal").classList.remove("open"); }
+
+  let resizeStarCanvas = null;
+  function initStarfield() {
+    const canvas = document.getElementById("bg-stars");
+    const ctx = canvas.getContext("2d");
+    let stars = [];
+    resizeStarCanvas = function () {
+      canvas.width = canvas.parentElement.clientWidth || window.innerWidth;
+      canvas.height = canvas.parentElement.clientHeight || window.innerHeight;
+      stars = Array.from({ length: 110 }, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.4 + 0.3, a: Math.random() }));
+    };
+    window.addEventListener("resize", () => { resizeStarCanvas(); renderGalaxy(); });
+    resizeStarCanvas();
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.a += (Math.random() - 0.5) * 0.03;
+        ctx.fillStyle = `rgba(226, 232, 240, ${Math.max(0.15, Math.min(0.9, s.a))})`;
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  initStarfield();
+  renderGalaxy();
+  loadFromCloud();
+</script>
 </body>
 </html>
